@@ -1,0 +1,31 @@
+{
+  "name": "text-annotator",
+  "version": "1.0.0",
+  "description": "A text annotation interface for classification",
+  "main": "lib/main.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CrowdCurio/text-annotator.git"
+  },
+  "keywords": [
+    "crowdcurio",
+    "text",
+    "annotation"
+  ],
+  "author": "Mike Schaekermann",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CrowdCurio/text-annotator/issues"
+  },
+  "homepage": "https://github.com/CrowdCurio/text-annotator#readme",
+  "dependencies": {
+    "jquery": "^3.2.1",
+    "jquery-ui-browserify": "^1.11.0-pre-seelio"
+  }
+}
