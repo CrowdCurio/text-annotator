@@ -1,0 +1,67 @@
+.annotation {
+    display: none;
+}
+
+.box-container {
+    position: relative;
+}
+
+input[type=range] {
+    padding: 0 !important;
+    border: none;
+}
+
+.classification-labels .col {
+    position: relative;
+}
+
+.classification-labels .btn {
+    width: 100%;
+    font-weight: bold;
+}
+
+.classification-labels .definition-button {
+    position: absolute;
+    z-index: 0;
+    bottom: -15px;
+    right: -3px;
+}
+
+.classification-labels .col:first-of-type .definition-button {
+    left: -3px;
+}
+
+.confidence-slider {
+    text-align: center;
+}
+
+.confidence-label-container {
+    width: 100%;
+    text-align: center;
+}
+
+.confidence-question {
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 17px;
+}
+
+.confidence-label {
+    font-weight: bold;
+}
+
+.confidence-buttons {
+    text-align: center;
+}
+
+.confidence-buttons label {
+    padding: 0 0 0 35px;
+    font-weight: bold;
+}
+
+.submission-button {
+    display: inline-block;
+    position: absolute;
+    right: -15px;
+    bottom: -10px;
+}
