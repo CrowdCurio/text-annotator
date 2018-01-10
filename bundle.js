@@ -244,7 +244,7 @@ $.widget('crowdcurio.TextAnnotator', {
         this.options.config = window.config;
 
         // 1.5. make sure we have a mode set
-        this.options.config.mode = 'workflow';
+        this.options.config.mode = this.options.config.mode || 'static'; // default to static
 
 
         // 2. render the base HTML containers
@@ -420,8 +420,8 @@ $.widget('crowdcurio.TextAnnotator', {
             var definitionButton = $('<button id="'+label.key.replace('_label', '').replace(/_/g, '-')+'-example" class="btn-floating waves-effect waves-light orange definition-button"><i class="fa fa-question" disabled></i></button>');
             definitionButton.click(function(e) {
                 $('.example-container').hide();
-                $("#"+e.target.id+"-container").fadeIn();
-                console.log("Trying to show #"+e.target.id+"-container");
+                $("#"+label.key.replace('_label', '').replace(/_/g, '-')+"-example-container").fadeIn();
+                console.log("Trying to show "+label.key.replace('_label', '').replace(/_/g, '-')+"-example-container" );
             });
             column.append(definitionButton);
             currentRow.append(column);
