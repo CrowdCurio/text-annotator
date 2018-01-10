@@ -25,7 +25,9 @@
   },
   "homepage": "https://github.com/CrowdCurio/text-annotator#readme",
   "dependencies": {
+    "hammerjs": "^2.0.8",
     "jquery": "^3.2.1",
-    "jquery-ui-browserify": "^1.11.0-pre-seelio"
+    "jquery-ui-browserify": "^1.11.0-pre-seelio",
+    "materialize-css": "^0.100.2"
   }
 }

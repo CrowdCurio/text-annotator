@@ -1,5 +1,17 @@
+h2 {
+    font-size: 1.76em;
+}
+
+h3 {
+    font-size: 1.42em;
+}
+
 .annotation {
     display: none;
+}
+
+.annotation-decision {
+    text-align: center;
 }
 
 .box-container {
@@ -65,3 +77,27 @@ input[type=range] {
     right: -15px;
     bottom: -10px;
 }
+
+dfn {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    text-decoration: underline;
+  }
+  dfn:before {
+    content: attr(title);
+  }
+ .dfn-tooltip {
+    display: none;
+  }
+  dfn:hover > .dfn-tooltip {
+    display: block;
+    position: absolute;
+    top: calc(1em + 5px);
+    width: 500px;
+    background: #5d5c5c;
+    padding: .5em;   
+    border: none;   
+    cursor: help;
+    text-align: left;
+  }
