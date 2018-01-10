@@ -244,7 +244,7 @@ $.widget('crowdcurio.TextAnnotator', {
         this.options.config = window.config;
 
         // 1.5. make sure we have a mode set
-        this.options.config.mode = this.options.config.mode || 'static';
+        this.options.config.mode = 'workflow';
 
 
         // 2. render the base HTML containers
@@ -331,7 +331,7 @@ $.widget('crowdcurio.TextAnnotator', {
     _createWorkflowHTMLContainers: function() {
         var that = this;
 
-        var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'correct-relation-node', 'readable-relation-node', 'informative-relation-node', 'consistent-relation-node'];
+        var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'direct-relation-node', 'readable-relation-node', 'informative-relation-node', 'consistent-relation-node'];
 
         // 1. render the workflow containers for traversing through decisions
         for(var i=0; i < nodes.length; i++){
@@ -508,16 +508,21 @@ $.widget('crowdcurio.TextAnnotator', {
         
         // 0. add the html for each possible label endpoint
         var labels = that.options.config.labels;
+        console.log(labels);
         labels.forEach(function(label, l){
             var ele_node = "#"+label.key.replace('_label', '').replace(/_/g, '-')+'-node-endpoint-content';
+            console.log("Label: "+ele_node);
+            console.log(label.endpoint_node);
+            console.log(l);
             $(ele_node).html(label.endpoint_node);
         });
 
-        var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'correct-relation-node', 'readable-relation-node', 'informative-relation-node', 'consistent-relation-node'];
+        var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'direct-relation-node', 'readable-relation-node', 'informative-relation-node', 'consistent-relation-node'];
 
         // 1. populate workflow elements
         var workflow = data['content']['workflow'];
         for(var i=0; i < nodes.length; i++){
+            console.log("trying to add to #"+nodes[i]+"-content");
             $("#"+nodes[i]+"-content").html(workflow[nodes[i].replace(/-/g, '_')]);
         }
 
@@ -540,7 +545,7 @@ $.widget('crowdcurio.TextAnnotator', {
                 case "starter-node":
                     $("#starter-node").hide();
                     if(choice === 'yes'){
-                        $("#correct-relation-node").show();
+                        $("#direct-relation-node").show();
                     } else if(choice === 'no'){
                         $("#no-relation-node").show();
                     }
@@ -564,8 +569,8 @@ $.widget('crowdcurio.TextAnnotator', {
                     }
                     break;
                 // Correct Relation
-                case "correct-relation-node": 
-                    $("#correct-relation-node").hide();
+                case "direct-relation-node": 
+                    $("#direct-relation-node").hide();
                     if(choice === 'yes'){
                         $("#readable-relation-node").show();
                     } else if(choice === 'no'){
