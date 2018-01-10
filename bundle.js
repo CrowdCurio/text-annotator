@@ -563,9 +563,9 @@ $.widget('crowdcurio.TextAnnotator', {
                 case "indirect-relation-node": 
                     $("#indirect-relation-node").hide();
                     if(choice === 'yes'){
-                        $("#no-relation-endpoint").show();
-                    } else if(choice === 'no'){
                         $("#indirect-relation-node-endpoint").show();
+                    } else if(choice === 'no'){
+                        $("#no-relation-node-endpoint").show();
                     }
                     break;
                 // Correct Relation
@@ -574,7 +574,7 @@ $.widget('crowdcurio.TextAnnotator', {
                     if(choice === 'yes'){
                         $("#readable-relation-node").show();
                     } else if(choice === 'no'){
-                        $("wrong-relation-node-endpoint").show();
+                        $("#wrong-relation-node-endpoint").show();
                     }
                     break;
                 case "readable-relation-node": 
@@ -596,9 +596,9 @@ $.widget('crowdcurio.TextAnnotator', {
                 case "consistent-relation-node": 
                     $("#consistent-relation-node").hide();
                     if(choice === 'yes'){
-                        $("#correct-relation-node-endpoint").show();
-                    } else if(choice === 'no'){
                         $("#partially-unreadable-relation-node-endpoint").show();
+                    } else if(choice === 'no'){
+                        $("#correct-relation-node-endpoint").show();
                     }
                     break;
             }
