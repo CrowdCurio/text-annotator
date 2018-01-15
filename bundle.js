@@ -452,6 +452,8 @@ $.widget('crowdcurio.TextAnnotator', {
             }
         }
 
+        console.log("Trying to submit ...");
+
         // save a response through the api client
         var apiClient = that._getApiClient();
         apiClient.create('response', {
@@ -501,7 +503,8 @@ CrowdCurioClient.prototype.init = function(params){
         this.router.init(this.client, {
             'page_size': 3,
             'task': params['task'],
-            'experiment': params['experiment']
+            'experiment': params['experiment'],
+            'condition': params['condition']
         });
 
     } else {
@@ -513,9 +516,20 @@ CrowdCurioClient.prototype.init = function(params){
         });
     }
 
-    // if we're collaborating, open the session
-    this.task_session = new TaskSession();
-    this.task_session.init(jQuery.extend({ 'client': this.client}, params));
+    /* artificially set things up */
+    config['collaboration'] = {
+        'active' : false,
+        'policy': {
+        }
+    };
+
+    // if collaboration is active, create and initialize a task session
+    if(config['collaboration']){
+        if(config['collaboration']['active']){
+            this.task_session = new TaskSession();
+            this.task_session.init(jQuery.extend({ 'client': this.client}, params));
+        }
+    }
 }
 
 CrowdCurioClient.prototype.setData = function(id){
@@ -670,21 +684,29 @@ module.exports = TaskRoutingManager;
 },{}],5:[function(require,module,exports){
 var ReconnectingWebSocket = require('reconnectingwebsocket');
 
+Array.prototype.diff = function (a) {
+    return this.filter(function (i) {
+        return a.indexOf(i) === -1;
+    });
+};
+
 function TaskSession(){
     this.model = 'tasksession';
     this.client = null;
+    this.present = null;
+    this.connected = false;
+    this.connected_users = [];
 
     // relations
     this.user = null;
     this.task = null;
     this.experiment = null;
     this.condition = null;
+    this.task_session = null;
+    this.channel_name = null;
 }
 
 TaskSession.prototype.init = function(params) {
-    // This function should initialize the TaskSession.
-    console.log('Initializing session.');
-
     // authenticate & instantiate the client's connection
     this.client = params['client']
 
@@ -708,9 +730,8 @@ TaskSession.prototype.init = function(params) {
         if(id === null){
             console.log("If you see this, the task doesn't have a valid task session. (One should be created!)")
         } else {
-            console.log("Session Found");
-            console.log(id);
-            that.connect(id);
+            that.task_session = id;
+            that.connect(that.task_session);
         }
     });
 }
@@ -720,16 +741,19 @@ TaskSession.prototype.init = function(params) {
  */
 TaskSession.prototype.find = function(){
     return new Promise(function(resolve, reject) {
-        // This function should find the session for the user.
-        console.log("Finding task session for user.");
+        // set params
+        params = {
+            task: this.task.id,
+            experiment: this.experiment.id,
+            condition: this.condition.id
+        }
 
         let action = [this.model, "list"];
-        this.client.action(schema, action).then(function(resp) {
+        this.client.action(schema, action, params).then(function(resp) {
             if(resp.count < 1){
                 // if we get here, we need to add a new task session
                 resolve(null);
             } else {
-                console.log("Result from TaskSession API");
                 resolve(resp.results[0].id);
             }
         });
@@ -740,31 +764,141 @@ TaskSession.prototype.find = function(){
  * Connects and maintains a valid websocket connection for a particula task session
  */
 TaskSession.prototype.connect = function(roomId){
-    console.log("This should conncet to the websocket.");
     $("#task-container").append('<div id="chats"></div>');
 
     var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
     var ws_path = ws_scheme + '://' + window.location.host + "/collaboration/stream/";
-    console.log("Connecting to " + ws_path);
+    console.log("[RTC] Attempting to Connect (" + ws_path+")");
     var socket = new ReconnectingWebSocket(ws_path);
+    var that = this;
+
+    function updateUserList(data){
+        // recursively check if the chat interface has rendered. when it has, update the count.
+        if($("#chat-user-count").length === 0){
+            setTimeout(function(){
+                updateUserList(data);
+            }, 100);
+            return;
+        } else {
+            // update the user count
+            var members = data['payload']['members'];
+            var ele = $("#chat-user-count");
+            ele.empty().html(members.length + ' <i class="fa fa-user" aria-hidden="true"></i>');
+
+            // build the new tooltip html
+            var tooltip_html = '';
+            for(var i=0; i < members.length; i++){
+                tooltip_html += members[i];
+                if(i != members.length-1){
+                    tooltip_html += '<br/>';
+                }
+            }
+
+            // find the difference between the connected users and the new set of task session members
+            var diff = that.connected_users.diff(members);
+            var diff = diff[0];
+
+
+            // if there's a difference, update the ui.
+            if(typeof diff !== 'undefined' && diff){
+                // add the message for the user who left and scroll
+                var msgdiv = $('#chat-messages');
+                msgdiv.append("<div class='contextual-message text-muted'>" + diff + " left the room!" + "</div>");
+                msgdiv.scrollTop(msgdiv.prop("scrollHeight"));
+            }
+
+            // update the tooltip
+            ele.attr('data-tooltip', tooltip_html);
+            ele.tooltip({delay: 25, tooltip: tooltip_html, html: true});  
+
+            // update the list of connected users
+            that.connected_users = members;
+        }
+    }
 
     // Helpful debugging
     socket.onopen = function () {
-        console.log("Connected to chat socket");
-        console.log("Trying to join Room: "+roomId);
+        if(that.connected){
+            return;
+        }
+
+        that.connected = true;
+
+        console.log("[RTC] Connected and Joining (ID: "+roomId+')')
         socket.send(JSON.stringify({
             "command": "join",  // determines which handler will be used (see chat/routing.py)
-            "room": roomId
+            "task_session": roomId,
+            'task': that.task.id,
+            'experiment': that.experiment.id,
+            'condition': that.condition.id
         }));
+
+        /* fetch the last 10 messages */
+        params = {
+            task_session: roomId
+        }
+        that.fetch("message", params, function(messages){
+            function convertTimestamp(ts){
+                var v = ts.split('T')
+                var t = v[0].split('-');
+                var year = t[0];
+                var month = t[2];
+                var day = t[1];
+                var time = v[1].split('.')[0].split(',')[0];
+                return day+"/"+month+"/"+year+" @ "+time;
+            }
+
+            var message_set = '';
+            for(var i = messages.results.length-1; i >= 0; i--){
+                var navbar_username = $("#user-logged-in a").text();
+                var direction = 'in';
+                if(navbar_username === messages.results[i].handle){
+                    direction = 'out';
+                }
+                var message_time = messages.results[i].created;
+
+                // Message
+                ok_msg = '<div class="message '+direction+' no-avatar">\
+                        <!-- BEGIN MESSAGE SENDER INFO -->\
+                        <div class="sender">\
+                            <a href="javascript:void(0);" title="Rufat Askerov">\
+                                <img src="assets/img/avatar.png" class="avatar" alt="Rufat Askerov">\
+                            </a>\
+                        </div>\
+                        <!-- END MESSAGE SENDER INFO -->\
+                        <div class="body">\
+                        <!-- BEGIN MESSAGE CONTENT-->\
+                        <div class="content"><span>'+messages.results[i].content+'</span></div>\
+                        <!-- BEGIN MESSAGE CONTENT  -->\
+                        <!-- BEGIN MESSAGE SEND TIME -->\
+                        <div class="seen"><span>'+convertTimestamp(message_time)+'</span> </div>\
+                        <!-- BEGIN MESSAGE SEND TIME -->\
+                        </div>\
+                        <div class="clear"></div>\
+                    </div>';
+                message_set+=ok_msg;
+            }
+            var msgdiv = $(".messages");
+            msgdiv.append(message_set);
+
+            // scroll to the bottom of the messages div
+            var msgdiv = $('#chat-messages');
+            msgdiv.scrollTop(msgdiv.prop("scrollHeight"));
+        });
     };
 
     socket.onclose = function () {
-        console.log("Disconnected from chat socket");
+        console.log("[RTC] Disconnected (ID: "+roomId+")");
+        socket.send(JSON.stringify({
+            "command": "leave",  // determines which handler will be used (see chat/routing.py)
+            "task_session": roomId,
+            "channel_name": that.channel_name
+        }));
     };
 
     socket.onmessage = function (message) {
         // Decode the JSON
-        console.log("Got websocket message " + message.data);
+        console.log("[RTC] " + message.data);
         var data = JSON.parse(message.data);
         // Handle errors
         if (data.error) {
@@ -772,61 +906,148 @@ TaskSession.prototype.connect = function(roomId){
             return;
         }
         // Handle joining
-        if (data.join) {
-            console.log("Joining room " + data.join);
-            var roomdiv = $(
-                "<div class='room' id='room-" + data.join + "'>" +
-                "<h2>" + data.name + "</h2>" +
-                "<div class='messages'></div>" +
-                "<input><button>Send</button>" +
-                "</div>"
-            );
-            $("#chats").append(roomdiv);
-            roomdiv.find("button").on("click", function () {
-                socket.send(JSON.stringify({
-                    "command": "send",
-                    "room": data.join,
-                    "message": roomdiv.find("input").val()
-                }));
-                roomdiv.find("input").val("");
-            });
+        if (data.msg_type === 7) {
+            that.channel_name = data['payload']['channel_name'];
+
+            if($("#default-chat-box-header").length === 0){
+                /* create chat box */
+                var roomdiv = $(
+                    '<!-- BEGIN CHAT BOX HEADER -->\
+                    <div id="default-chat-box-header" class="box-header blue-grey darken-4">\
+                        <!-- BEGIN USER INFO -->\
+                        <div class="info">\
+                            <span class="box-username">\
+                                <a href="#">Chat\
+                            </span>\
+                        </div>\
+                        <!-- END USER INFO -->\
+                        <a href="#" style="float: right;margin-right: 15px;color: white;"><i class="fa fa-cog" aria-hidden="true"></i><!-- END USER INFO --></a>\
+                        <a id="chat-user-count" href="#" style="float: right;margin-right: 15px;color: white;" class="tooltipped" data-position="top" data-delay="25" data-tooltip="You">\
+                            <div class="preloader-wrapper small active" style="height:18px;width:18px;">\
+                                <div class="spinner-layer spinner-green-only">\
+                                <div class="circle-clipper left">\
+                                    <div class="circle"></div>\
+                                </div><div class="gap-patch">\
+                                    <div class="circle"></div>\
+                                </div><div class="circle-clipper right">\
+                                    <div class="circle"></div>\
+                                </div>\
+                                </div>\
+                            </div>\
+                        </a>\
+                    </div>\
+                    <!-- END CHAT BOX HEADER -->\
+                    <!-- BEGIN CHAT BOX BODY -->\
+                    <div class="box-body">\
+                        <div class="status online"></div>\
+                        <!-- BEGIN MESSAGES -->\
+                        <div class="message-scrooler">\
+                            <div id="chat-messages" class="messages">\
+                            </div>\
+                        </div>\
+                    </div>\
+                    <!-- END MESSAGES -->\
+                </div>\
+                <!-- END CHAT BOX BODY -->\
+                <!-- BEGIN CHAT BOX FOOTER -->\
+                <div class="box-footer">\
+                    <!-- BEGIN  WRITE MESSAGE -->\
+                    <div class="item send-message">\
+                        <input id="chat-input-box" class="textarea" placeholder="Write message">\
+                        </input>\
+                    </div>\
+                    <!-- END WRITE MESSAGE -->\
+                    <!-- BEGIN ADD FILE -->\
+                    <div id="chat-send-button" class="item file">\
+                    <i class="fa fa-paper-plane" aria-hidden="true"></i>\
+                    </div>\
+                    <!-- END ADD FILE -->\
+                </div>\
+                <!-- END CHAT BOX FOOTER -->\
+                <div class="box-footer-end blue-grey darken-4"></div>');
+                $("#chats").append(roomdiv);
+                $("#chat-send-button").on("click", function () {
+                    socket.send(JSON.stringify({
+                        "command": "send",
+                        "task_session": data['payload']['join'],
+                        "message": $("#chat-input-box").val().trim(),
+                    }));
+                    $("#chat-input-box").val("");
+                });
+
+                // add the tooltip functionality
+                $('.tooltipped').tooltip({delay: 25, tooltip: 'Loading', html: true});
+            }
             // Handle leaving
-        } else if (data.leave) {
-            console.log("Leaving room " + data.leave);
-            $("#room-" + data.leave).remove();
-        } else if (data.message || data.msg_type !== 0) {
+        } else if (data.msg_type === 8) {
+            console.log("Leaving room " + data['payload']['leave']);
+            $("#room-" + data['payload']['leave']).remove();
+        } else if (data['payload']['message'] || data.msg_type !== 0) {
             var msgdiv = $(".messages");
             var ok_msg = "";
             // msg types are defined in chat/settings.py
             // Only for demo purposes is hardcoded, in production scenarios, consider call a service.
             switch (data.msg_type) {
                 case 0:
+                    var navbar_username = $("#user-logged-in a").text();
+                    var direction = 'in';
+                    if(navbar_username === data['payload']['username']){
+                        direction = 'out';
+                    }
+
+                    // calculate time
+                    var currentdate = new Date(); 
+                    var datetime = (currentdate.getMonth()+1) + "/"
+                                    + currentdate.getDate()  + "/" 
+                                    + currentdate.getFullYear() + " @ "  
+                                    + currentdate.getHours() + ":"  
+                                    + currentdate.getMinutes() + ":" 
+                                    + currentdate.getSeconds();
+
                     // Message
-                    ok_msg = "<div class='message'>" +
-                        "<span class='username'>" + data.username + "</span>" +
-                        "<span class='body'>" + data.message + "</span>" +
-                        "</div>";
+                    ok_msg = '<div class="message '+direction+' no-avatar">\
+                            <!-- BEGIN MESSAGE SENDER INFO -->\
+                            <div class="sender">\
+                                <a href="javascript:void(0);" title="Rufat Askerov">\
+                                    <img class="avatar" alt="Rufat Askerov">\
+                                </a>\
+                            </div>\
+                            <!-- END MESSAGE SENDER INFO -->\
+                            <div class="body">\
+                            <!-- BEGIN MESSAGE CONTENT-->\
+                            <div class="content"><span>'+data['payload']['message']+'</span></div>\
+                            <!-- BEGIN MESSAGE CONTENT  -->\
+                            <!-- BEGIN MESSAGE SEND TIME -->\
+                            <div class="seen"><span>'+datetime+'</span> </div>\
+                            <!-- BEGIN MESSAGE SEND TIME -->\
+                            </div>\
+                            <div class="clear"></div>\
+                        </div>';
                     break;
                 case 1:
                     // Warning/Advice messages
-                    ok_msg = "<div class='contextual-message text-warning'>" + data.message + "</div>";
+                    ok_msg = "<div class='contextual-message text-warning'>" + data['payload']['message'] + "</div>";
                     break;
                 case 2:
                     // Alert/Danger messages
-                    ok_msg = "<div class='contextual-message text-danger'>" + data.message + "</div>";
+                    ok_msg = "<div class='contextual-message text-danger'>" + data['payload']['message'] + "</div>";
                     break;
                 case 3:
                     // "Muted" messages
-                    ok_msg = "<div class='contextual-message text-muted'>" + data.message + "</div>";
+                    ok_msg = "<div class='contextual-message text-muted'>" + data['payload']['message'] + "</div>";
                     break;
                 case 4:
                     // User joined room
-                    ok_msg = "<div class='contextual-message text-muted'>" + data.username + " joined the room!" + "</div>";
+                    ok_msg = "<div class='contextual-message text-muted'>" + data['payload']['username'] + " joined the room!" + "</div>";
                     break;
                 case 5:
                     // User left room
-                    ok_msg = "<div class='contextual-message text-muted'>" + data.username + " left the room!" + "</div>";
+                    ok_msg = "<div class='contextual-message text-muted'>" + data['payload']['username'] + " left the room!" + "</div>";
                     break;
+                case 6: // Server is updating us with active users in session
+                    that.channel_name = data['payload']['channel_name'];
+                    updateUserList(data);
+                    return;   
                 default:
                     console.log("Unsupported message type!");
                     return;
@@ -835,9 +1056,22 @@ TaskSession.prototype.connect = function(roomId){
             msgdiv.scrollTop(msgdiv.prop("scrollHeight"));
         } else {
             console.log("Cannot handle message!");
+            console.log(data);
         }
     };
 
+}
+
+/**
+ * A general-purpose function for listing data from the server.
+ * @param {*} model 
+ * @param {*} callback 
+ */
+TaskSession.prototype.fetch = function(model, params, callback){
+    let action = ["message", "list"];
+    this.client.action(schema, action, params).then(function(resp) {
+        callback(resp);
+    });
 }
 
 module.exports = TaskSession;
