@@ -47,7 +47,7 @@ $.widget('crowdcurio.TextAnnotator', {
         this.options.config = window.config;
 
         // 1.5. make sure we have a mode set
-        this.options.config.mode = 'workflow';// this.options.config.mode || 'static'; // default to static
+        this.options.config.mode = this.options.config.mode || 'static'; // default to static
 
         this.state = 'practice';
 
