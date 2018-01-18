@@ -89,9 +89,9 @@ $.widget('crowdcurio.TextAnnotator', {
 
                 var completed_tasks;
                 if(that.state === 'required'){
-                    completed_tasks = 15 - apiClient.router.queues['required']['total'];
+                    completed_tasks = 15 - apiClient.router.queues['required']['total']+1;
                 } else {
-                    completed_tasks = 3 - apiClient.router.queues['practice']['total'];
+                    completed_tasks = 3 - apiClient.router.queues['practice']['total']+1;
                 }
                 var ele = $(".preloader-wrapper");
                 ele.remove();
@@ -143,7 +143,7 @@ $.widget('crowdcurio.TextAnnotator', {
                     that._renderWorkflowDesign(data);
                 }
 
-                var completed_tasks = 15 - apiClient.router.queues['required']['total'];
+                var completed_tasks = 15 - apiClient.router.queues['required']['total']+1;
                 var ele = $(".preloader-wrapper");
                 ele.remove();
                 var ele = $("#progress-bar-text");
@@ -728,7 +728,7 @@ $.widget('crowdcurio.TextAnnotator', {
 
         if(that.state === 'practice' && this.options.config.mode == 'static'){
             var correct_answer = $("#correct_answer").text();
-            var correct_explanation = $("#correct_explanation").text();
+            var correct_explanation = $("#correct_explanation").html().replace("&lt;br/&gt;", "<br/>");
 
             var correct = that.current_label.toLowerCase();
             var current = correct_answer;
