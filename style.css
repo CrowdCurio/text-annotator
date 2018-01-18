@@ -30,6 +30,7 @@ input[type=range] {
 .classification-labels .btn {
     width: 100%;
     font-weight: bold;
+    height: 65px;
 }
 
 .classification-labels .definition-button {
@@ -95,9 +96,19 @@ dfn {
     position: absolute;
     top: calc(1em + 5px);
     width: 500px;
-    background: #5d5c5c;
+    background: #f3f3f3;
+    border: 1px black;
     padding: .5em;   
     border: none;   
     cursor: help;
     text-align: left;
   }
+
+  #correct_answer, #correct_explanation {
+      display: none;
+  }
+
+  .toast.rounded {
+    max-width: 400px;
+    word-break: break-word;
+}

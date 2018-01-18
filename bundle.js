@@ -49,6 +49,7 @@ $.widget('crowdcurio.TextAnnotator', {
         // 1.5. make sure we have a mode set
         this.options.config.mode = this.options.config.mode || 'static'; // default to static
 
+        this.state = 'practice';
 
         // 2. render the base HTML containers
         if(that.options.config.mode === 'static'){
@@ -69,6 +70,67 @@ $.widget('crowdcurio.TextAnnotator', {
             condition: window.condition
         });
 
+        // 3.5 fetch practice tasks 
+        apiClient.getNextTask('practice', function(data) {
+            if(Object.keys(data).length === 0 && data.constructor === Object){
+                // we're done with practice
+                // 4. fetch the next required task
+                that.state = 'required';
+                that._fetchRequiredTasks();
+
+                setTimeout(function(){
+                    console.log('trying to open modal');
+                    // close the modal
+                    $("#training_modal").modal({dismissible: true});
+                    $("#training_modal").modal('open'); 
+                }, 1000);
+            } else {
+                console.log('Practice Tasks:');
+                apiClient.setData(data['id']);
+                
+                if(that.options.config.mode === 'static'){
+                    that._renderStaticDesign(data);
+                } else if(that.options.config.mode === 'workflow'){
+                    that._renderWorkflowDesign(data);
+                }
+
+                var completed_tasks;
+                if(that.state === 'required'){
+                    completed_tasks = 15 - apiClient.router.queues['required']['total'];
+                } else {
+                    completed_tasks = 3 - apiClient.router.queues['practice']['total'];
+                }
+                var ele = $(".preloader-wrapper");
+                ele.remove();
+                var ele = $("#progress-bar-text");
+                if(that.state === 'required'){
+                    ele.text("Task Progress: " + completed_tasks.toString() + " / 15");
+                } else {
+                    ele.text("Practice Task Progress: " + completed_tasks.toString() + " / 3");
+                }
+
+                // attach the submit button handlers
+                $(".submit-btn").click(function(e){
+                    that._submitResponse(e);
+                });
+
+                // close the modal
+                $("#loading_modal").modal('close'); 
+
+                setTimeout(function(){
+                    console.log('trying to open modal');
+                    // close the modal
+                    $("#training_modal").modal({dismissible: true});
+                    $("#training_modal").modal('open'); 
+                }, 1000);
+            }
+        });
+    },
+
+    _fetchRequiredTasks: function(){
+        var that = this;
+        var apiClient = that._getApiClient();
+        
         // 4. fetch the next task
         apiClient.getNextTask('required', function(data) {
             if(Object.keys(data).length === 0 && data.constructor === Object){
@@ -83,6 +145,12 @@ $.widget('crowdcurio.TextAnnotator', {
                 } else if(that.options.config.mode === 'workflow'){
                     that._renderWorkflowDesign(data);
                 }
+
+                var completed_tasks = 15 - apiClient.router.queues['required']['total'];
+                var ele = $(".preloader-wrapper");
+                ele.remove();
+                var ele = $("#progress-bar-text");
+                ele.text("Task Progress: " + completed_tasks.toString() + " / 15");
 
                 // attach the submit button handlers
                 $(".submit-btn").click(function(e){
@@ -103,7 +171,30 @@ $.widget('crowdcurio.TextAnnotator', {
     _createStaticHTMLContainers: function() {
         var that = this;
         var content = ' \
-            <div id="loading_modal" class="modal" style="top: auto; width: 310px !important;"><div class="modal-content modal-trigger" href="#loading_modal" style="height: 110px;"><h5>Loading Task Interface</h5><div class="progress"><div class="indeterminate"></div></div></div></div>\
+        <div id="training_modal" class="modal" style="top: auto; height: 200px;width: 510px !important;"><div class="modal-content modal-trigger" href="#training_modal" style="height: 110px;"><h5>Try it Out</h5><hr/><div>Before you begin, we\'re going to let you try a few practice tasks to get the hang of things. Don\'t worry -- these won\'t count against you.</div><hr/><div style="text-align: center;"><a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" style="text-align: center;">OK - Got it!</a></div></div></div>\
+        <div id="loading_modal" class="modal" style="top: auto; width: 310px !important;"><div class="modal-content modal-trigger" href="#loading_modal" style="height: 110px;"><h5>Loading Task Interface</h5><div class="progress"><div class="indeterminate"></div></div></div></div>\
+            <div class="progress_bar" style="width: 700px; float: left; text-align: center;"> \
+                <div class="row"> \
+                    <div class="col s12 box-container"> \
+                        <div class="card"> \
+                            <div class="card-content blue-grey darken-4 white-text"> \
+                            <strong><p id="progress-bar-text" class="progress-bar-text flow-text" style="font-size: 1.2em;text-align:center;font-weight: 600;">\
+                            <div class="preloader-wrapper small active">\
+                                <div class="spinner-layer spinner-green-only">\
+                                <div class="circle-clipper left">\
+                                    <div class="circle"></div>\
+                                </div><div class="gap-patch">\
+                                    <div class="circle"></div>\
+                                </div><div class="circle-clipper right">\
+                                    <div class="circle"></div>\
+                                </div>\
+                                </div>\
+                            </div></p></strong> \
+                            </div> \
+                        </div> \
+                    </div> \
+                </div> \
+            </div> \
             <div class="annotation" style="width: 700px; float: left;"> \
                 <div class="row"> \
                     <div class="col s12box-container"> \
@@ -133,6 +224,34 @@ $.widget('crowdcurio.TextAnnotator', {
 
     _createWorkflowHTMLContainers: function() {
         var that = this;
+        
+        var content = ' \
+        <div id="training_modal" class="modal" style="top: auto; height: 200px;width: 510px !important;"><div class="modal-content modal-trigger" href="#training_modal" style="height: 110px;"><h5>Try it Out</h5><hr/><div>Before you begin, we\'re going to let you try a few practice tasks to get the hang of things. Don\'t worry -- these won\'t count against you.</div><hr/><div style="text-align: center;"><a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" style="text-align: center;">OK - Got it!</a></div></div></div>\
+        <div id="loading_modal" class="modal" style="top: auto; width: 310px !important;"><div class="modal-content modal-trigger" href="#loading_modal" style="height: 110px;"><h5>Loading Task Interface</h5><div class="progress"><div class="indeterminate"></div></div></div></div>\
+        <div class="progress_bar" style="width: 700px; float: left; text-align: center;"> \
+        <div class="row"> \
+            <div class="col s12 box-container"> \
+                <div class="card"> \
+                    <div class="card-content blue-grey darken-4 white-text"> \
+                    <strong><p id="progress-bar-text" class="progress-bar-text flow-text" style="font-size: 1.2em;text-align:center;font-weight: 600;">\
+                    <div class="preloader-wrapper small active">\
+                        <div class="spinner-layer spinner-green-only">\
+                        <div class="circle-clipper left">\
+                            <div class="circle"></div>\
+                        </div><div class="gap-patch">\
+                            <div class="circle"></div>\
+                        </div><div class="circle-clipper right">\
+                            <div class="circle"></div>\
+                        </div>\
+                        </div>\
+                    </div></p></strong> \
+                    </div> \
+                </div> \
+            </div> \
+        </div> \
+    </div> \
+    ';
+    $(that.element).html(content);
 
         var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'direct-relation-node', 'readable-relation-node', 'informative-relation-node', 'consistent-relation-node'];
 
@@ -191,7 +310,7 @@ $.widget('crowdcurio.TextAnnotator', {
 
     _renderStaticDesign: function(data) {
 
-        $("#task-container").css('min-width', '1290px');
+        $("#task-container").css('width', '1290px');
         var that = this;
         var numberOfButtonsPerRow, currentRow, buttonColumnClass;
         var submissionButton = $(that.element).find('.submission-button button');
@@ -306,6 +425,7 @@ $.widget('crowdcurio.TextAnnotator', {
     },
 
     _renderWorkflowDesign: function(data) {
+        $("#task-container").css('width', '1290px');
         var that = this;
         
         // 0. add the html for each possible label endpoint
@@ -331,79 +451,183 @@ $.widget('crowdcurio.TextAnnotator', {
     },
 
     _attachButtonHandlers: function(){
+        var that = this;
         $(".next-btn").click(function(e){
             // get the current node and the choice
-            var index = e.target.id.lastIndexOf('-');
-            var cur_node = e.target.id.slice(0, index);
-            var choice = e.target.id.split('-')[e.target.id.split('-').length-1]
+            var btn = $(this);
+            var index = $(this).attr('id').lastIndexOf('-');
+            var cur_node = $(this).attr('id').slice(0, index);
+            var choice = $(this).attr('id').split('-')[$(this).attr('id').split('-').length-1]
+            if(that.state === 'required'){
+                switch(cur_node){
+                    // Starter Node
+                    case "starter-node":
+                        $("#starter-node").hide();
+                        if(choice === 'yes'){
+                            $("#direct-relation-node").show();
+                        } else if(choice === 'no'){
+                            $("#no-relation-node").show();
+                        }
+                        break;
+                    // No Relation    
+                    case "no-relation-node": 
+                        $("#no-relation-node").hide();
+                        if(choice === 'yes'){       
+                            $("#indirect-relation-node").show();
+                        } else if(choice === 'no'){
+                            $("#no-relation-node-endpoint").show();
+                        }
+                        break;
+                    // Indirect Relation
+                    case "indirect-relation-node": 
+                        $("#indirect-relation-node").hide();
+                        if(choice === 'yes'){
+                            $("#indirect-relation-node-endpoint").show();
+                        } else if(choice === 'no'){
+                            $("#no-relation-node-endpoint").show();
+                        }
+                        break;
+                    // Correct Relation
+                    case "direct-relation-node": 
+                        $("#direct-relation-node").hide();
+                        if(choice === 'yes'){
+                            $("#readable-relation-node").show();
+                        } else if(choice === 'no'){
+                            $("#wrong-relation-node-endpoint").show();
+                        }
+                        break;
+                    case "readable-relation-node": 
+                        $("#readable-relation-node").hide();
+                        if(choice === 'yes'){
+                            $("#informative-relation-node").show();
+                        } else if(choice === 'no'){
+                            $("#incomplete-relation-node-endpoint").show();
+                        }
+                        break;
+                    case "informative-relation-node": 
+                        $("#informative-relation-node").hide();
+                        if(choice === 'yes'){
+                            $("#consistent-relation-node").show();
+                        } else if(choice === 'no'){
+                            $("#misleading-relation-node-endpoint").show();
+                        }
+                        break;
+                    case "consistent-relation-node": 
+                        $("#consistent-relation-node").hide();
+                        if(choice === 'yes'){
+                            $("#partially-unreadable-relation-node-endpoint").show();
+                        } else if(choice === 'no'){
+                            $("#correct-relation-node-endpoint").show();
+                        }
+                        break;
+                }
 
-            switch(cur_node){
-                // Starter Node
-                case "starter-node":
-                    $("#starter-node").hide();
-                    if(choice === 'yes'){
-                        $("#direct-relation-node").show();
-                    } else if(choice === 'no'){
-                        $("#no-relation-node").show();
+                // scroll to the top
+                $('html, body').animate({
+                    scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+                }, 'slow');
+
+            } else { /// practice
+                console.log("cur_node: ");
+                console.log(cur_node);
+                console.log("#"+cur_node+"-content");
+                var correct_answer = $("#"+cur_node+"-content").children()[0].innerHTML;
+                var correct_explanation = $("#"+cur_node+"-content").children()[1].innerHTML;
+
+                // Try and remove any existing toasts that exist
+                if($('.toast').length){
+                    var toastElement = $('.toast').first()[0];
+                    var toastInstance = toastElement.M_Toast;
+                    toastInstance.remove();
+                }
+
+                if(choice !== correct_answer){
+                    Materialize.toast(correct_explanation + "<br/><br/> Try again.", 30000, 'rounded')
+                    return;
+                } else {
+                    switch(cur_node){
+                        // Starter Node
+                        case "starter-node":
+                            $("#starter-node").hide();
+                            if(choice === 'yes'){
+                                $("#direct-relation-node").show();
+                            } else if(choice === 'no'){
+                                $("#no-relation-node").show();
+                            }
+                            break;
+                        // No Relation    
+                        case "no-relation-node": 
+                            $("#no-relation-node").hide();
+                            if(choice === 'yes'){       
+                                $("#indirect-relation-node").show();
+                            } else if(choice === 'no'){
+                                $("#no-relation-node-endpoint").show();
+                            }
+                            break;
+                        // Indirect Relation
+                        case "indirect-relation-node": 
+                            $("#indirect-relation-node").hide();
+                            if(choice === 'yes'){
+                                $("#indirect-relation-node-endpoint").show();
+                            } else if(choice === 'no'){
+                                $("#no-relation-node-endpoint").show();
+                            }
+                            break;
+                        // Correct Relation
+                        case "direct-relation-node": 
+                            $("#direct-relation-node").hide();
+                            if(choice === 'yes'){
+                                $("#readable-relation-node").show();
+                            } else if(choice === 'no'){
+                                $("#wrong-relation-node-endpoint").show();
+                            }
+                            break;
+                        case "readable-relation-node": 
+                            $("#readable-relation-node").hide();
+                            if(choice === 'yes'){
+                                $("#informative-relation-node").show();
+                            } else if(choice === 'no'){
+                                $("#incomplete-relation-node-endpoint").show();
+                            }
+                            break;
+                        case "informative-relation-node": 
+                            $("#informative-relation-node").hide();
+                            if(choice === 'yes'){
+                                $("#consistent-relation-node").show();
+                            } else if(choice === 'no'){
+                                $("#misleading-relation-node-endpoint").show();
+                            }
+                            break;
+                        case "consistent-relation-node": 
+                            $("#consistent-relation-node").hide();
+                            if(choice === 'yes'){
+                                $("#partially-unreadable-relation-node-endpoint").show();
+                            } else if(choice === 'no'){
+                                $("#correct-relation-node-endpoint").show();
+                            }
+                            break;
+                    
                     }
-                    break;
-                // No Relation    
-                case "no-relation-node": 
-                    $("#no-relation-node").hide();
-                    if(choice === 'yes'){       
-                        $("#indirect-relation-node").show();
-                    } else if(choice === 'no'){
-                        $("#no-relation-node-endpoint").show();
-                    }
-                    break;
-                // Indirect Relation
-                case "indirect-relation-node": 
-                    $("#indirect-relation-node").hide();
-                    if(choice === 'yes'){
-                        $("#indirect-relation-node-endpoint").show();
-                    } else if(choice === 'no'){
-                        $("#no-relation-node-endpoint").show();
-                    }
-                    break;
-                // Correct Relation
-                case "direct-relation-node": 
-                    $("#direct-relation-node").hide();
-                    if(choice === 'yes'){
-                        $("#readable-relation-node").show();
-                    } else if(choice === 'no'){
-                        $("#wrong-relation-node-endpoint").show();
-                    }
-                    break;
-                case "readable-relation-node": 
-                    $("#readable-relation-node").hide();
-                    if(choice === 'yes'){
-                        $("#informative-relation-node").show();
-                    } else if(choice === 'no'){
-                        $("#incomplete-relation-node-endpoint").show();
-                    }
-                    break;
-                case "informative-relation-node": 
-                    $("#informative-relation-node").hide();
-                    if(choice === 'yes'){
-                        $("#consistent-relation-node").show();
-                    } else if(choice === 'no'){
-                        $("#misleading-relation-node-endpoint").show();
-                    }
-                    break;
-                case "consistent-relation-node": 
-                    $("#consistent-relation-node").hide();
-                    if(choice === 'yes'){
-                        $("#partially-unreadable-relation-node-endpoint").show();
-                    } else if(choice === 'no'){
-                        $("#correct-relation-node-endpoint").show();
-                    }
-                    break;
+
+                    // scroll to the top
+                    $('html, body').animate({
+                        scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+                    }, 'slow');
+
+                }
+                
             }
+            
         });
     },
 
     _resetInterface: function(){
         var that = this;
+
+        // 0. record the progress
+        var ele = $("#progress-bar-text");
+        var completed_tasks = parseInt(ele.text().split(' ')[2]) + 1;
+
         // 1. clear the html workspace
         $(that.element).empty();
 
@@ -414,28 +638,68 @@ $.widget('crowdcurio.TextAnnotator', {
             that._createWorkflowHTMLContainers();
         }
 
-        // 3. get the next task
-        // 4. fetch the next task
-        var apiClient = that._getApiClient();
-        apiClient.getNextTask('required', function(data) {
-            if(Object.keys(data).length === 0 && data.constructor === Object){
-                // we're done!
-                // transition to the next step of the experiment
-                incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment);
-            } else {
-                apiClient.setData(data['id']);
-                if(that.options.config.mode === 'static'){
-                    that._renderStaticDesign(data);
-                } else if(that.options.config.mode === 'workflow'){
-                    that._renderWorkflowDesign(data);
-                }
+        if(that.state === 'practice'){
+            // 3. get the next task
+            // 4. fetch the next task
+            var apiClient = that._getApiClient();
+            apiClient.getNextTask('practice', function(data) {
+                if(Object.keys(data).length === 0 && data.constructor === Object){
+                    that.state = 'required';
+                    that._fetchRequiredTasks();
+                } else {
+                    apiClient.setData(data['id']);
+                    if(that.options.config.mode === 'static'){
+                        that._renderStaticDesign(data);
+                    } else if(that.options.config.mode === 'workflow'){
+                        that._renderWorkflowDesign(data);
+                    }
 
-                // attach the submit button handlers
-                $(".submit-btn").click(function(e){
-                    that._submitResponse(e);
-                });
-            }
-        });
+                    var completed_tasks;
+                    completed_tasks = 3 - apiClient.router.queues['practice']['total'];
+                    var ele = $(".preloader-wrapper");
+                    ele.remove();
+                    var ele = $("#progress-bar-text");
+                    ele.text("Practice Task Progress: " + completed_tasks.toString() + " / 3");
+                    console.log("Updated Practice Tasks! "+completed_tasks);
+
+                    // attach the submit button handlers
+                    $(".submit-btn").click(function(e){
+                        that._submitResponse(e);
+                    });
+                }
+            });
+        } else {
+
+            // 3. get the next task
+            // 4. fetch the next task
+            var apiClient = that._getApiClient();
+            that.state = 'required';
+            apiClient.getNextTask('required', function(data) {
+                if(Object.keys(data).length === 0 && data.constructor === Object){
+                    // we're done!
+                    // transition to the next step of the experiment
+                    incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment);
+                } else {
+                    apiClient.setData(data['id']);
+                    if(that.options.config.mode === 'static'){
+                        that._renderStaticDesign(data);
+                    } else if(that.options.config.mode === 'workflow'){
+                        that._renderWorkflowDesign(data);
+                    }
+
+                    // update the progress bar
+                    var ele = $(".preloader-wrapper");
+                    ele.remove();
+                    var ele = $("#progress-bar-text");
+                    ele.text("Task Progress: " + completed_tasks.toString() + " / 15");
+
+                    // attach the submit button handlers
+                    $(".submit-btn").click(function(e){
+                        that._submitResponse(e);
+                    });
+                }
+            });
+        }
 
     }, 
 
@@ -453,6 +717,32 @@ $.widget('crowdcurio.TextAnnotator', {
         }
 
         console.log("Trying to submit ...");
+
+         // Get toast DOM Element, get instance, then call remove function
+        if($('.toast').length){
+            var toastElement = $('.toast').first()[0];
+            var toastInstance = toastElement.M_Toast;
+            toastInstance.remove();
+        }
+
+        if(that.state === 'practice' && that.mode == 'static'){
+            var correct_answer = $("#correct_answer").text();
+            var correct_explanation = $("#correct_explanation").text();
+
+            var correct = that.current_label.toLowerCase();
+            var current = correct_answer;
+            if(correct === current){
+                Materialize.toast("Good job! That's correct. :D", 5000, 'rounded')
+            } else {
+                Materialize.toast(correct_explanation, 30000, 'rounded')
+                return;
+            }
+        }
+
+        // scroll to the top
+        $('html, body').animate({
+            scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+        }, 'slow');
 
         // save a response through the api client
         var apiClient = that._getApiClient();
