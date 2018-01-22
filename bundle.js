@@ -705,8 +705,8 @@ $.widget('crowdcurio.TextAnnotator', {
     }, 
 
     _submitResponse: function(e){
-        var that = this;        
-        var label = e.target.id.replace('-submit-btn', '').replace('-node', '').replace('_label', '').replace('_', '-');
+        var that = this;      
+        var label = e.currentTarget.id.replace('-submit-btn', '').replace('-node', '').replace('_label', '').replace('_', '-');
 
         // if label is static, it means we aren't using the workflow design
         if(label === 'static'){
