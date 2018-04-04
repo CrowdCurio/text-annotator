@@ -210,7 +210,7 @@ $.widget('crowdcurio.TextAnnotator', {
                 // transition to the next step of the experiment
                 if(that.options.config.lab_study){
                     that.state = 'reviewing';
-                    console.log("This should load phase 2");
+                    swal("Phase II");
                     that._parseLabelHistory();
                 } else {
                     incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment);
@@ -764,7 +764,7 @@ $.widget('crowdcurio.TextAnnotator', {
                     // transition to the next step of the experiment
                     // transition to the next step of the experiment
                     if(that.options.config.lab_study){
-                        console.log("This should load phase 2");
+                        swal("Phase II");
                         that.state = 'reviewing';
                         that._parseLabelHistory();
                     } else {
