@@ -25,10 +25,12 @@
   },
   "homepage": "https://github.com/CrowdCurio/text-annotator#readme",
   "dependencies": {
-    "crowdcurio-client": "0.0.3",
+    "crowdcurio-client": "^0.1.8",
+    "d3": "^3.5.17",
     "hammerjs": "^2.0.8",
     "jquery": "^3.2.1",
     "jquery-ui-browserify": "^1.11.0-pre-seelio",
-    "materialize-css": "^0.100.2"
+    "materialize-css": "^0.100.2",
+    "sweetalert": "^2.1.0"
   }
 }
