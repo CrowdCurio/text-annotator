@@ -210,7 +210,7 @@ $.widget('crowdcurio.TextAnnotator', {
                 // transition to the next step of the experiment
                 if(that.options.config.lab_study){
                     that.state = 'reviewing';
-                    swal("Phase II");
+                    swal("Phase I completed! Let's take a moment to see how you've done!");
                     that._parseLabelHistory();
                 } else {
                     incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment);
@@ -764,7 +764,7 @@ $.widget('crowdcurio.TextAnnotator', {
                     // transition to the next step of the experiment
                     // transition to the next step of the experiment
                     if(that.options.config.lab_study){
-                        swal("Phase II");
+                        swal("Phase I completed! Let's take a moment to see how you've done!");
                         that.state = 'reviewing';
                         that._parseLabelHistory();
                     } else {
@@ -1072,6 +1072,7 @@ $.widget('crowdcurio.TextAnnotator', {
         reviewList = reviewList.concat(consistentAndExpertDisagreement);
         var toReview = reviewList.slice(0, 3);
 
+        console.log("ToReview: "+toReview.length+" instances");
         this._startReviewProcess(toReview);
 
     },
@@ -1104,7 +1105,7 @@ $.widget('crowdcurio.TextAnnotator', {
             var ele = $(".preloader-wrapper");
             ele.remove();
             var ele = $("#progress-bar-text");
-            ele.text("Task Progress: " + (3-toReview.length+1) + " / 3");
+            ele.text("Task Progress: " + (3-toReview.length+1) + " / " + toReview.length);
             $("#loading_modal").modal('close'); 
         } else {
             // we have no remaining tasks
@@ -1124,11 +1125,11 @@ $.widget('crowdcurio.TextAnnotator', {
             $(that.element).empty();
 
             $(that.element).append("<div id='canvas'></div>");
-            $(that.element).append('<div id="infobar"><p style="margin:5px;font-style:italic;opacity:0.6">The information regarding the current error instance to categorize:</p></div>');
+            $(that.element).append('<div id="infobar"></div>');
 
 
             // append the task's metadata
-            var metadata = '<p id="instanceInfo"><i>Entities:</i>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<b>'+reviewed[0].e1+'</b>  ..  <b>'+reviewed[0].e2+'</b><br><i>Relation Label:</i>&emsp;&emsp;<b>'+reviewed[0].relation+'</b><br><i>Sentence:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</i> <b>'+reviewed[0].sentence+'</b></p><p style="right: 20px;position: absolute;bottom: 60px;"><button class="next-visualization">Next</button></p>';
+            var metadata = '<button class="next-visualization">Next</button><p id="instanceInfo"><table  id="bottomTable"><tr><td><b>Entities:</b></td><td>'+reviewed[0].e1+' .. '+reviewed[0].e2+'</td></tr><tr><td><b>Relation Label:</b></td><td>'+reviewed[0].relation+'</td></tr><tr><td><b>Sentence:</b></td><td>'+reviewed[0].sentence+'</td></tr></table></p>';
             $("#infobar").append(metadata);
 
             that._drawVisualization(reviewed[0].labels)
@@ -1153,14 +1154,14 @@ $.widget('crowdcurio.TextAnnotator', {
         $(that.element).empty();
 
         $(that.element).append("<div id='canvas'></div>");
-        $(that.element).append('<div id="infobar"><p style="margin:5px;font-style:italic;opacity:0.6">The information regarding the current error instance to categorize:</p></div>');
+        $(that.element).append('<div id="infobar"></div>');
 
 
         // get the first item
         var reviewed = JSON.parse(window.localStorage.getItem('labelsReviewed'));
 
         // append the task's metadata
-        var metadata = '<p id="instanceInfo"><i>Entities:</i>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<b>'+reviewed[0].e1+'</b>  ..  <b>'+reviewed[0].e2+'</b><br><i>Relation Label:</i>&emsp;&emsp;<b>'+reviewed[0].relation+'</b><br><i>Sentence:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;</i> <b>'+reviewed[0].sentence+'</b></p><p style="right: 20px;position: absolute;bottom: 60px;"><button class="next-visualization">Next</button></p>';
+        var metadata = '<button class="next-visualization">Next</button><p id="instanceInfo"><table id="bottomTable"><tr><td><b>Entities:</b></td><td>'+reviewed[0].e1+' .. '+reviewed[0].e2+'</td></tr><tr><td><b>Relation Label:</b></td><td>'+reviewed[0].relation+'</td></tr><tr><td><b>Sentence:</b></td><td>'+reviewed[0].sentence+'</td></tr></table></p>';
         $("#infobar").append(metadata);
 
         that._drawVisualization(reviewed[0].labels)
@@ -1170,7 +1171,7 @@ $.widget('crowdcurio.TextAnnotator', {
             that._getNextVisualization();
         });
 
-        swal("Phase III: Visualizing Consistency");
+        swal("Phase II Completed: How do you think you did?");
     },
 
     _drawVisualization: function(labels){
@@ -1266,7 +1267,7 @@ $.widget('crowdcurio.TextAnnotator', {
           
           // ************** Generate the tree diagram	 *****************
           var margin = {top: 10, right: 180, bottom: 20, left: 180},
-              width = window.innerWidth - margin.right - margin.left,
+              width = window.innerWidth * 0.99 - margin.right - margin.left,
               height = window.innerHeight * 0.8 - margin.top - margin.bottom;
               
           var i = 0,
@@ -1289,13 +1290,7 @@ $.widget('crowdcurio.TextAnnotator', {
             'misleading-relation': 5,
             'correct-relation': 6,
             'partially-unreadable-relation': 7
-        }
-
-                
-          
-          //console.log(Path1);
-          //console.log(Path2);
-          
+        } 
           
           var tree = d3.layout.tree()
               .size([height, width]);
