@@ -47,6 +47,7 @@ $.widget('crowdcurio.TextAnnotator', {
         annotator = this;
         this.instanceId = 'none';
         that.logicPath = [];
+        that.justification = "";
 
         // load up known data
         this.data = {
@@ -735,7 +736,9 @@ $.widget('crowdcurio.TextAnnotator', {
                         var ele = $("#starter-justification");
                         if (!$.trim(ele.val())) {
                             swal("Error: You must provide a justification to move forward!");
-                            break;
+                            return;
+                        } else {
+                            that.justification = $.trim(ele.val());
                         }
 
                         $("#starter-node").hide();
@@ -860,6 +863,8 @@ $.widget('crowdcurio.TextAnnotator', {
                 console.log("cur_node: ");
                 console.log(cur_node);
                 console.log("#"+cur_node+"-content");
+                console.log("Choice: "+choice);
+                console.log("Correct Answer: "+correct_answer);
                 var correct_answer = $("#"+cur_node+"-content").children()[0].innerHTML;
                 var correct_explanation = $("#"+cur_node+"-content").children()[1].innerHTML;
 
@@ -876,70 +881,125 @@ $.widget('crowdcurio.TextAnnotator', {
                 } else {
                     Materialize.toast(correct_explanation + "<br/><br/> Good job! That's correct. :D", 30000, 'rounded')
                     switch(cur_node){
-                        // Starter Node
-                        case "starter-node":
-                            $("#starter-node").hide();
-                            if(choice === 'yes'){
-                                $("#direct-relation-node").show();
-                            } else if(choice === 'no'){
-                                $("#no-relation-node").show();
-                            }
-                            break;
-                        // No Relation    
-                        case "no-relation-node": 
-                            $("#no-relation-node").hide();
-                            if(choice === 'yes'){       
-                                $("#indirect-relation-node").show();
-                            } else if(choice === 'no'){
-                                $("#no-relation-node-endpoint").show();
-                            }
-                            break;
-                        // Indirect Relation
-                        case "indirect-relation-node": 
-                            $("#indirect-relation-node").hide();
-                            if(choice === 'yes'){
-                                $("#indirect-relation-node-endpoint").show();
-                            } else if(choice === 'no'){
-                                $("#no-relation-node-endpoint").show();
-                            }
-                            break;
-                        // Correct Relation
-                        case "direct-relation-node": 
-                            $("#direct-relation-node").hide();
-                            if(choice === 'yes'){
-                                $("#readable-relation-node").show();
-                            } else if(choice === 'no'){
-                                $("#wrong-relation-node-endpoint").show();
-                            }
-                            break;
-                        case "readable-relation-node": 
-                            $("#readable-relation-node").hide();
-                            if(choice === 'yes'){
-                                $("#informative-relation-node").show();
-                            } else if(choice === 'no'){
-                                $("#incomplete-relation-node-endpoint").show();
-                            } else if(choice === 'major'){
-                                $("#wrong-relation-node-endpoint").show();
-                            } else if(choice === 'minor'){
-                                $("#informative-relation-node-b").show();
-                            } 
-                            break;
-                        case "informative-relation-node": 
-                            $("#informative-relation-node").hide();
-                            if(choice === 'yes'){
-                                $("#consistent-relation-node").show();
-                            } else if(choice === 'no'){
-                                $("#misleading-relation-node-endpoint").show();
-                            }
-                            break;
-                        case "consistent-relation-node": 
-                            $("#consistent-relation-node").hide();
-                            if(choice === 'yes'){
-                                $("#partially-unreadable-relation-node-endpoint").show();
-                            } else if(choice === 'no'){
-                                $("#correct-relation-node-endpoint").show();
-                            }
-                            break;
+                            // Starter Node
+                            case "starter-node":
+                                // check for justification
+                                var ele = $("#starter-justification");
+                                if (!$.trim(ele.val())) {
+                                    swal("Error: You must provide a justification to move forward!");
+                                    return;
+                                } else {
+                                    that.justification = $.trim(ele.val());
+                                }
+        
+                                $("#starter-node").hide();
+                                if(choice === 'yes'){
+                                    $("#direct-relation-node").show();
+                                } else if(choice === 'no'){
+                                    $("#no-relation-node").show();
+                                }
+                                break;
+                            // No Relation    
+                            case "no-relation-node": 
+                                $("#no-relation-node").hide();
+                                if(choice === 'yes'){       
+                                    $("#indirect-relation-node").show();
+                                } else if(choice === 'no'){
+                                    $("#no-relation-node-endpoint").show();
+                                }
+                                break;
+                            // Indirect Relation
+                            case "indirect-relation-node": 
+                                $("#indirect-relation-node").hide();
+                                if(choice === 'yes'){
+                                    $("#indirect-relation-node-endpoint").show();
+                                } else if(choice === 'no'){
+                                    $("#no-relation-node-endpoint").show();
+                                }
+                                break;
+                            // Correct Relation
+                            case "direct-relation-node": 
+                                $("#direct-relation-node").hide();
+                                if(that.state === 'workflow'){
+                                    if(choice === 'yes'){
+                                        $("#readable-relation-node").show();
+                                    } else if(choice === 'no'){
+                                        $("#wrong-relation-node-endpoint").show();
+                                    }
+                                } else {
+                                    if(choice === 'yes'){
+                                        $("#readable-relation-node").show();
+                                    } else if(choice === 'no'){
+                                        $("#informative-relation-node-a").show();
+                                    }
+                                }
+                                break;
+                            case "readable-relation-node": 
+                                $("#readable-relation-node").hide();
+                                if(choice === 'yes'){
+                                    $("#informative-relation-node").show();
+                                } else if(choice === 'no'){
+                                    $("#incomplete-relation-node-endpoint").show();
+                                } else if(choice === 'major'){
+                                    $("#wrong-relation-node-endpoint").show();
+                                } else if(choice === 'minor'){
+                                    $("#informative-relation-node-b").show();
+                                } 
+                                break;
+                            case "informative-relation-node": 
+                                $("#informative-relation-node").hide();
+                                if(choice === 'yes'){
+                                    $("#consistent-relation-node").show();
+                                } else if(choice === 'no'){
+                                    $("#misleading-relation-node-endpoint").show();
+                                }
+                                break;
+                            case "consistent-relation-node": 
+                                $("#consistent-relation-node").hide();
+                                if(choice === 'yes'){
+                                    $("#partially-unreadable-relation-node-endpoint").show();
+                                } else if(choice === 'no'){
+                                    $("#correct-relation-node-endpoint").show();
+                                }
+                                break;
+        
+                            // hyrbid-specific
+                            case "informative-relation-node-a": 
+                                $("#informative-relation-node-a").hide();
+                                if(choice === 'yes'){
+                                    $("#missing-information-node-a").show();
+                                } else if(choice === 'no'){
+                                    $("#correct-relation-node-endpoint").show();
+                                }
+                                break;
+                            case "informative-relation-node-b": 
+                                $("#informative-relation-node-b").hide();
+                                if(choice === 'yes'){
+                                    $("#missing-information-node-b").show();
+                                } else if(choice === 'no'){
+                                    $("#partially-unreadable-relation-node-endpoint").show();
+                                }
+                                break;    
+                            case "missing-information-node-a": 
+                                $("#missing-information-node-a").hide();
+                                if(choice === 'incomplete'){
+                                    $("#incomplete-relation-node-endpoint").show();
+                                } else if(choice === 'misleading'){
+                                    $("#misleading-relation-node-endpoint").show();
+                                } else if(choice === 'clear') {
+                                    $("#correct-relation-node-endpoint").show();
+                                }
+                                break;        
+                            case "missing-information-node-b": 
+                                $("#missing-information-node-b").hide();
+                                if(choice === 'incomplete'){
+                                    $("#incomplete-relation-node-endpoint").show();
+                                } else if(choice === 'misleading'){
+                                    $("#misleading-relation-node-endpoint").show();
+                                } else if(choice === 'clear') {
+                                    $("#correct-relation-node-endpoint").show();
+                                }
+                                break;   
                     
                     }
 
@@ -970,6 +1030,7 @@ $.widget('crowdcurio.TextAnnotator', {
         // 1. clear the html workspace
         $(that.element).empty();
         that.logicPath = [];
+        that.justification = "";
 
          // 2. render the base HTML containers
          if(that.options.config.mode === 'static'){
@@ -1176,7 +1237,7 @@ $.widget('crowdcurio.TextAnnotator', {
         // save a response through the api client
         var apiClient = that._getApiClient();
         apiClient.create('response', {
-                content: {'label': label, 'path': that.logicPath}
+                content: {'label': label, 'path': that.logicPath, 'justification': that.justification}
             }, function(result){
                 that._resetInterface();
         });
