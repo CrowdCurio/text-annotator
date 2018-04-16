@@ -46,6 +46,7 @@ $.widget('crowdcurio.TextAnnotator', {
         var that = this;
         annotator = this;
         this.instanceId = 'none';
+        that.logicPath = [];
 
         // load up known data
         this.data = {
@@ -128,6 +129,8 @@ $.widget('crowdcurio.TextAnnotator', {
             that._createStaticHTMLContainers();
         } else if(that.options.config.mode === 'workflow'){
             that._createWorkflowHTMLContainers();
+        } else if(that.options.config.mode === 'hybrid'){
+            that._createHybridHTMLContainers();
         }
 
         $("#loading_modal").modal({dismissible: false});
@@ -160,6 +163,8 @@ $.widget('crowdcurio.TextAnnotator', {
                     that._renderStaticDesign(data);
                 } else if(that.options.config.mode === 'workflow'){
                     that._renderWorkflowDesign(data);
+                } else if(that.options.config.mode === 'hybrid'){
+                    that._renderHybridDesign(data);
                 }
 
                 var completed_tasks;
@@ -224,6 +229,8 @@ $.widget('crowdcurio.TextAnnotator', {
                     that._renderStaticDesign(data);
                 } else if(that.options.config.mode === 'workflow'){
                     that._renderWorkflowDesign(data);
+                } else if(that.options.config.mode === 'hybrid'){
+                    that._renderHybridDesign(data);
                 }
 
                 var completed_tasks = that.options.config.total_tasks - apiClient.router.queues['required']['total']+1;
@@ -329,8 +336,7 @@ $.widget('crowdcurio.TextAnnotator', {
                 </div> \
             </div> \
         </div> \
-    </div> \
-    ';
+    </div>';
     $(that.element).html(content);
 
         var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'direct-relation-node', 'readable-relation-node', 'informative-relation-node', 'consistent-relation-node'];
@@ -363,6 +369,163 @@ $.widget('crowdcurio.TextAnnotator', {
 
         // 2. render the end-point containers
         var nodes = ['no-relation-node', 'indirect-relation-node','wrong-relation-node', 'incomplete-relation-node', 'misleading-relation-node','correct-relation-node', 'partially-unreadable-relation-node'];
+
+        for(var i=0; i < nodes.length; i++){
+            var content = ' \
+                <div id="'+nodes[i]+'-endpoint" class="endpoint-node annotation"> \
+                    <div class="row"> \
+                        <div class="col s12 m6 box-container"> \
+                            <div class="card blue-grey darken-1"> \
+                                <div class="card-content blue-grey darken-1 white-text"> \
+                                    <p id="'+nodes[i]+'-endpoint-content"  class="classification-content flow-text" style="font-size: 1.2em;"></p> \
+                                </div> \
+                                <div class="annotation-decision card-action">\
+                                    <button id="'+nodes[i]+'-submit-btn" class="btn submit-btn waves-effect waves-light" name="action">Submit\
+                                        <i class="material-icons right">send</i>\
+                                    </button>\
+                                </div>\
+                            </div> \
+                        </div> \
+                    </div> \
+                </div> \
+            ';
+            $(that.element).append(content);
+        }
+        
+    },
+
+    _createHybridHTMLContainers: function(){
+        var that = this;
+        
+        var content = ' \
+        <div id="training_modal" class="modal" style="top: auto; height: 200px;width: 510px !important;"><div class="modal-content" href="#training_modal" style="height: 110px;"><h5>Try it Out</h5><hr/><div>Before you begin, we\'re going to let you try a few practice tasks to get the hang of things. Don\'t worry -- these won\'t count against you.</div><hr/><div style="text-align: center;"><a id="training-modal-ok-btn" href="#!" class="waves-green btn-flat" style="text-align: center;">OK - Got it!</a></div></div></div>\
+        <div id="loading_modal" class="modal" style="top: auto; width: 310px !important;"><div class="modal-content modal-trigger" href="#loading_modal" style="height: 110px;"><h5>Loading Task Interface</h5><div class="progress"><div class="indeterminate"></div></div></div></div>\
+        <div class="progress_bar" style="width: 700px; float: left; text-align: center;"> \
+        <div class="row"> \
+            <div class="col s12 box-container"> \
+                <div class="card"> \
+                    <div class="card-content blue-grey darken-4 white-text"> \
+                    <strong><p id="progress-bar-text" class="progress-bar-text flow-text" style="font-size: 1.2em;text-align:center;font-weight: 600;">\
+                    <div class="preloader-wrapper small active">\
+                        <div class="spinner-layer spinner-green-only">\
+                        <div class="circle-clipper left">\
+                            <div class="circle"></div>\
+                        </div><div class="gap-patch">\
+                            <div class="circle"></div>\
+                        </div><div class="circle-clipper right">\
+                            <div class="circle"></div>\
+                        </div>\
+                        </div>\
+                    </div></p></strong> \
+                    </div> \
+                </div> \
+            </div> \
+        </div> \
+    </div>';
+    $(that.element).html(content);
+
+        var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'direct-relation-node', 'readable-relation-node', 'informative-relation-node-a', 'informative-relation-node-b', 'missing-information-node-a', 'missing-information-node-b'];
+
+        // 1. render the workflow containers for traversing through decisions
+        for(var i=0; i < nodes.length; i++){
+            var content;
+            var text = '<div class="row"><form class="col s12"><div class="row"><div class="input-field col s12"><textarea id="textarea1" class="materialize-textarea"></textarea><label for="textarea1" class="">Explain why your answer is \'Yes\' or \'No\'.</label></div> </div></form></div>';
+
+            if(nodes[i] === 'starter-node'){
+                content = ' \
+                <div id="'+nodes[i]+'" class="annotation"> \
+                    <div class="row"> \
+                        <div class="col s12 m6 box-container"> \
+                            <div class="card"> \
+                                <div class="card-content blue-grey darken-1 white-text"> \
+                                    <p id="'+nodes[i]+'-content"  class="classification-content flow-text" style="font-size: 1.2em;"></p> \
+                                </div> \
+                                <div class="annotation-decision card-action">\
+                                <div class="row"><form class="col s12"><div class="row"><div class="input-field col s12"><textarea id="starter-justification" class="materialize-textarea"></textarea><label for="textarea1" class="">Explain why your answer is \'Yes\' or \'No\'.</label></div> </div></form></div>\
+                                <button id="'+nodes[i]+'-yes" class="btn next-btn waves-effect waves-light" name="action">Yes\
+                                    <i class="fa fa-check" aria-hidden="true"></i>\
+                                </button>\
+                                <button id="'+nodes[i]+'-no" class="btn next-btn waves-effect waves-light" name="action">No\
+                                    <i class="fa fa-times" aria-hidden="true"></i>\
+                                </button>\
+                                </div>\
+                            </div> \
+                        </div> \
+                    </div> \
+                </div> \
+            ';
+            }
+            else if(nodes[i] === 'missing-information-node-a' || nodes[i] === 'missing-information-node-b'){
+                content = ' \
+                <div id="'+nodes[i]+'" class="annotation"> \
+                    <div class="row"> \
+                        <div class="col s12 m6 box-container"> \
+                            <div class="card"> \
+                                <div class="card-content blue-grey darken-1 white-text"> \
+                                    <p id="'+nodes[i]+'-content"  class="classification-content flow-text" style="font-size: 1.2em;"></p> \
+                                </div> \
+                                <div class="annotation-decision card-action">\
+                                    <button id="'+nodes[i]+'-incomplete" class="btn next-btn waves-effect waves-light" name="action">Incomplete Relation\
+                                    </button>\
+                                    <button id="'+nodes[i]+'-misleading" class="btn next-btn waves-effect waves-light" name="action">Misleading Relation\
+                                    </button>\
+                                    <button id="'+nodes[i]+'-clear" class="btn next-btn waves-effect waves-light" name="action" style="margin-top: 15px;">Clear Relation\
+                                    </button>\
+                                </div>\
+                            </div> \
+                        </div> \
+                    </div> \
+                </div> \
+            ';
+            } else if(nodes[i] === 'readable-relation-node'){
+                content = ' \
+                <div id="'+nodes[i]+'" class="annotation"> \
+                    <div class="row"> \
+                        <div class="col s12 m6 box-container"> \
+                            <div class="card"> \
+                                <div class="card-content blue-grey darken-1 white-text"> \
+                                    <p id="'+nodes[i]+'-content"  class="classification-content flow-text" style="font-size: 1.2em;"></p> \
+                                </div> \
+                                <div class="annotation-decision card-action">\
+                                    <button id="'+nodes[i]+'-major" class="btn next-btn waves-effect waves-light" name="action">Major\
+                                    </button>\
+                                    <button id="'+nodes[i]+'-minor" class="btn next-btn waves-effect waves-light" name="action">Minor\
+                                    </button>\
+                                </div>\
+                            </div> \
+                        </div> \
+                    </div> \
+                </div> \
+            ';
+            } else {
+            content = ' \
+                <div id="'+nodes[i]+'" class="annotation"> \
+                    <div class="row"> \
+                        <div class="col s12 m6 box-container"> \
+                            <div class="card"> \
+                                <div class="card-content blue-grey darken-1 white-text"> \
+                                    <p id="'+nodes[i]+'-content"  class="classification-content flow-text" style="font-size: 1.2em;"></p> \
+                                </div> \
+                                <div class="annotation-decision card-action">\
+                                    <button id="'+nodes[i]+'-yes" class="btn next-btn waves-effect waves-light" name="action">Yes\
+                                        <i class="fa fa-check" aria-hidden="true"></i>\
+                                    </button>\
+                                    <button id="'+nodes[i]+'-no" class="btn next-btn waves-effect waves-light" name="action">No\
+                                        <i class="fa fa-times" aria-hidden="true"></i>\
+                                    </button>\
+                                </div>\
+                            </div> \
+                        </div> \
+                    </div> \
+                </div> \
+            ';
+            }
+            $(that.element).append(content);
+        }
+
+        // 2. render the end-point containers
+        var nodes = ['no-relation-node', 'indirect-relation-node','wrong-relation-node', 'incomplete-relation-node', 'misleading-relation-node','correct-relation-node', 'partially-unreadable-relation-node'];
+        
 
         for(var i=0; i < nodes.length; i++){
             var content = ' \
@@ -530,6 +693,32 @@ $.widget('crowdcurio.TextAnnotator', {
         $('#starter-node').show();
     },
 
+    _renderHybridDesign: function(data) {
+        $("#task-container").css('width', '1290px');
+        var that = this;
+        
+        // 0. add the html for each possible label endpoint
+        var labels = that.options.config.labels;
+        labels.forEach(function(label, l){
+            var ele_node = "#"+label.key.replace('_label', '').replace(/_/g, '-')+'-node-endpoint-content';
+            $(ele_node).html(label.endpoint_node);
+        });
+
+        var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'direct-relation-node', 'readable-relation-node', 'informative-relation-node-a', 'informative-relation-node-b',  'missing-information-node-a', 'missing-information-node-b'];
+
+        // 1. populate workflow elements
+        var workflow = data['content']['workflow'];
+        for(var i=0; i < nodes.length; i++){
+            $("#"+nodes[i]+"-content").html(workflow[nodes[i].replace(/-/g, '_')]);
+        }
+
+        // attacah button handlers
+        that._attachButtonHandlers();
+
+        // show the starter node
+        $('#starter-node').show();
+    },
+
     _attachButtonHandlers: function(){
         var that = this;
         $(".next-btn").click(function(e){
@@ -537,11 +726,18 @@ $.widget('crowdcurio.TextAnnotator', {
             var btn = $(this);
             var index = $(this).attr('id').lastIndexOf('-');
             var cur_node = $(this).attr('id').slice(0, index);
-            var choice = $(this).attr('id').split('-')[$(this).attr('id').split('-').length-1]
+            var choice = $(this).attr('id').split('-')[$(this).attr('id').split('-').length-1];
             if(that.state !== 'practice'){
                 switch(cur_node){
                     // Starter Node
                     case "starter-node":
+                        // check for justification
+                        var ele = $("#starter-justification");
+                        if (!$.trim(ele.val())) {
+                            swal("Error: You must provide a justification to move forward!");
+                            break;
+                        }
+
                         $("#starter-node").hide();
                         if(choice === 'yes'){
                             $("#direct-relation-node").show();
@@ -570,10 +766,18 @@ $.widget('crowdcurio.TextAnnotator', {
                     // Correct Relation
                     case "direct-relation-node": 
                         $("#direct-relation-node").hide();
-                        if(choice === 'yes'){
-                            $("#readable-relation-node").show();
-                        } else if(choice === 'no'){
-                            $("#wrong-relation-node-endpoint").show();
+                        if(that.state === 'workflow'){
+                            if(choice === 'yes'){
+                                $("#readable-relation-node").show();
+                            } else if(choice === 'no'){
+                                $("#wrong-relation-node-endpoint").show();
+                            }
+                        } else {
+                            if(choice === 'yes'){
+                                $("#readable-relation-node").show();
+                            } else if(choice === 'no'){
+                                $("#informative-relation-node-a").show();
+                            }
                         }
                         break;
                     case "readable-relation-node": 
@@ -582,7 +786,11 @@ $.widget('crowdcurio.TextAnnotator', {
                             $("#informative-relation-node").show();
                         } else if(choice === 'no'){
                             $("#incomplete-relation-node-endpoint").show();
-                        }
+                        } else if(choice === 'major'){
+                            $("#wrong-relation-node-endpoint").show();
+                        } else if(choice === 'minor'){
+                            $("#informative-relation-node-b").show();
+                        } 
                         break;
                     case "informative-relation-node": 
                         $("#informative-relation-node").hide();
@@ -600,7 +808,48 @@ $.widget('crowdcurio.TextAnnotator', {
                             $("#correct-relation-node-endpoint").show();
                         }
                         break;
+
+                    // hyrbid-specific
+                    case "informative-relation-node-a": 
+                        $("#informative-relation-node-a").hide();
+                        if(choice === 'yes'){
+                            $("#missing-information-node-a").show();
+                        } else if(choice === 'no'){
+                            $("#correct-relation-node-endpoint").show();
+                        }
+                        break;
+                    case "informative-relation-node-b": 
+                        $("#informative-relation-node-b").hide();
+                        if(choice === 'yes'){
+                            $("#missing-information-node-b").show();
+                        } else if(choice === 'no'){
+                            $("#partially-unreadable-relation-node-endpoint").show();
+                        }
+                        break;    
+                    case "missing-information-node-a": 
+                        $("#missing-information-node-a").hide();
+                        if(choice === 'incomplete'){
+                            $("#incomplete-relation-node-endpoint").show();
+                        } else if(choice === 'misleading'){
+                            $("#misleading-relation-node-endpoint").show();
+                        } else if(choice === 'clear') {
+                            $("#correct-relation-node-endpoint").show();
+                        }
+                        break;        
+                    case "missing-information-node-b": 
+                        $("#missing-information-node-b").hide();
+                        if(choice === 'incomplete'){
+                            $("#incomplete-relation-node-endpoint").show();
+                        } else if(choice === 'misleading'){
+                            $("#misleading-relation-node-endpoint").show();
+                        } else if(choice === 'clear') {
+                            $("#correct-relation-node-endpoint").show();
+                        }
+                        break;    
                 }
+
+                // save the choicce
+                that.logicPath.push(choice);
 
                 // scroll to the top
                 $('html, body').animate({
@@ -669,7 +918,11 @@ $.widget('crowdcurio.TextAnnotator', {
                                 $("#informative-relation-node").show();
                             } else if(choice === 'no'){
                                 $("#incomplete-relation-node-endpoint").show();
-                            }
+                            } else if(choice === 'major'){
+                                $("#wrong-relation-node-endpoint").show();
+                            } else if(choice === 'minor'){
+                                $("#informative-relation-node-b").show();
+                            } 
                             break;
                         case "informative-relation-node": 
                             $("#informative-relation-node").hide();
@@ -716,12 +969,15 @@ $.widget('crowdcurio.TextAnnotator', {
 
         // 1. clear the html workspace
         $(that.element).empty();
+        that.logicPath = [];
 
          // 2. render the base HTML containers
          if(that.options.config.mode === 'static'){
             that._createStaticHTMLContainers();
         } else if(that.options.config.mode === 'workflow'){
             that._createWorkflowHTMLContainers();
+        } else if(that.options.config.mode === 'hybrid'){
+            that._createHybridHTMLContainers();
         }
 
         if(that.state === 'practice'){
@@ -739,7 +995,10 @@ $.widget('crowdcurio.TextAnnotator', {
                         that._renderStaticDesign(data);
                     } else if(that.options.config.mode === 'workflow'){
                         that._renderWorkflowDesign(data);
+                    } else if(that.options.config.mode === 'hybrid'){
+                        that._renderHybridDesign(data);
                     }
+
 
                     var ele = $(".preloader-wrapper");
                     ele.remove();
@@ -778,7 +1037,10 @@ $.widget('crowdcurio.TextAnnotator', {
                         that._renderStaticDesign(data);
                     } else if(that.options.config.mode === 'workflow'){
                         that._renderWorkflowDesign(data);
+                    } else if(that.options.config.mode === 'hybrid'){
+                        that._renderHybridDesign(data);
                     }
+                    
 
                     // update the progress bar
                     var ele = $(".preloader-wrapper");
@@ -914,7 +1176,7 @@ $.widget('crowdcurio.TextAnnotator', {
         // save a response through the api client
         var apiClient = that._getApiClient();
         apiClient.create('response', {
-                content: {'label': label}
+                content: {'label': label, 'path': that.logicPath}
             }, function(result){
                 that._resetInterface();
         });
