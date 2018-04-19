@@ -602,22 +602,9 @@ $.widget('crowdcurio.TextAnnotator', {
                     var button = $('<button>').addClass('btn').addClass('multiple-choice-btn').val(label.replace(' ', '-')).html(label).attr('id', classType+'-'+label.replace(' ', '-')+'-btn');
                     column.append(button);
                     var definitionButton = $('<button id="'+classType+'-'+label.replace(' ', '-')+'-example" class="btn-floating waves-effect waves-light orange definition-button"><i class="fa fa-question" disabled></i></button>');
-                    definitionButton.click(function(e) {
-                        $('.example-container').hide();
-                        $("#"+classType+'-'+label.replace(' ', '-')+'-example-container').fadeIn();
-                    });
-                    column.append(definitionButton);
-                    currentRow.append(column);
-                    var button = $('#'+classType+'-'+label.replace(' ', '-')+'-btn');
-                    button.click(function(event) {
-                        console.log("Clicked");
-                        event.preventDefault();
-                        $('.multiple-choice-btn').removeClass(activeButtonClass).addClass(inactiveButtonClass);
 
-                        button.addClass(activeButtonClass).removeClass(inactiveButtonClass);
-                    });
 
-                    var exampleContent = {
+var exampleContent = {
                         'misleading relation' : '<div style="display: table-cell; width: 50%; background-color: #990000; color: black; padding: 20px;"><h3><b>Misleading Relation Label</b></h3> <hr><p>Based on the reference sentence, these entities <b>E1</b> and <b>E2</b> are directly related. That is, it\'s possible to write an independent clause  such that :<br><br></p><ol type="1"><li>the clause contains <b>E1</b> and <b>E2</b></li><li><b>E1</b> and <b>E2</b> appear in the same order as in <b>S</b></li><li><u>no external knowledge</u> is used to write this independent clause</li></ol><br>Also:<br><ol type="1"><li>While the relation label <b>RL</b> is readable, and looks like a valid relationship, once the reference sentence <b>S</b> is consulted it becomes evident that the label is misleading and not consistent with what is expressed by <b>S</b>.</li><li>It is often the case that critical parts of the relation label <b>RL</b> is missing or the actual relationship holds between other entities in that sentence and not between <b>E1</b> and <b>E2</b>.</li></ol><br><br>in the following examples, the <b style="color:white;">[white highlighted words]</b> are missing from the generated label:<br><br><div class="example">Constitution defines <b>[E1 President]</b> as the highest <b>[E2 state authority]</b> <b style="color:white;">[after the Supreme Leader]</b></div><br><div class="example"><b style="color:white;">[After being elected]</b> <b>[E1 president]</b> must be appointed by the <b>[E2 Supreme Leader]</b></div><br><p></p></div>',
 
                         'incomplete relation': '<div style="display: table-cell; background-color: #DA007F; color: black; padding: 20px;"><h3><b>Incomplete Relation Label</b></h3><hr><p>Based on the reference sentence, these entities <b>E1</b> and <b>E2</b> are directly related. That is, it\'s possible to write an independent clause  such that :<br><br></p><ol type="1"><li>the clause contains <b>E1</b> and <b>E2</b></li><li><b>E1</b> and <b>E2</b> appear in the same order as in <b>S</b></li><li><u>no external knowledge</u> is used to write this independent clause</li></ol><br>Also:<br><ol type="1"><li>The relation label <b>RL</b> is readable.</li><li>Critical parts of the relation label <b>RL</b> is missing.</li><li>As a result, by reading the label <b>RL</b> alone it is not possilbe to fully understand the relation between <b>E1</b> and <b>E2</b>.</li></ol><br><br>in the following examples, the <b style="color:white;">[white highlighted words]</b> are missing from the generated label:<br><br><div class="example"><b>[E1 mayor]</b> of Town <b style="color:white;">[of Niagara-on-the-Lake]</b> shall be known as the <b>[E2 Lord Mayor]</b></div><br><div class="example"><b>[E1 Constitution]</b> defines President <b style="color:white;">[as the highest state authority]</b> after the <b>[E2 Supreme Leader]</b></div><br><p></p></div>',
@@ -640,6 +627,24 @@ $.widget('crowdcurio.TextAnnotator', {
                         </div> \
                     ';
                     $(that.element).append(content);
+
+
+                    definitionButton.click(function(e) {
+                        $('.example-container').hide();
+                        var id = e.currentTarget.id;
+                        console.log("Showing: #"+id+'-container');
+                        $("#"+id+'-container').fadeIn();
+                    });
+                    column.append(definitionButton);
+                    currentRow.append(column);
+                    var button = $('#'+classType+'-'+label.replace(' ', '-')+'-btn');
+                    button.click(function(event) {
+                        console.log("Clicked");
+                        event.preventDefault();
+                        $('.multiple-choice-btn').removeClass(activeButtonClass).addClass(inactiveButtonClass);
+
+                        button.addClass(activeButtonClass).removeClass(inactiveButtonClass);
+                    });
                 });
             }
         }
