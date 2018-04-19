@@ -1051,6 +1051,7 @@ var exampleContent = {
                 if(choice === 'btn'){
                     if($(".multiple-choice-btn.teal").length > 0){
                         choice = $(".multiple-choice-btn.teal").val().replace("-relation", '');
+                        cur_node = 'missing-information-node-a';
                     } else {
                         swal("You must select a label before clicking next.");
                         return;
@@ -1179,7 +1180,7 @@ var exampleContent = {
                                     $("#partially-unreadable-relation-node-endpoint").show();
                                 }
                                 break;    
-                                case "missing-information-node-a-next": 
+                            case "missing-information-node-a": 
                                 console.log("Length: "+$(".missing-information-btn.teal").length);
                                 if($(".multiple-choice-btn.teal").length === 0){
                                     swal("You must select a label before clicking next.");
