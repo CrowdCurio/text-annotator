@@ -48,6 +48,7 @@ $.widget('crowdcurio.TextAnnotator', {
         this.instanceId = 'none';
         that.logicPath = [];
         that.justification = "";
+        that.labelConfidence = "";
 
         // load up known data
         this.data = {
@@ -440,6 +441,7 @@ $.widget('crowdcurio.TextAnnotator', {
         var nodes = ['starter-node', 'no-relation-node', 'indirect-relation-node', 'direct-relation-node', 'readable-relation-node', 'informative-relation-node-a', 'informative-relation-node-b', 'missing-information-node-a', 'missing-information-node-b', 'consistency-check-node-a', 'consistency-check-node-b'];
 
         // 1. render the workflow containers for traversing through decisions
+        var exampleDivs = '';
         for(var i=0; i < nodes.length; i++){
             var content;
 
@@ -599,12 +601,12 @@ $.widget('crowdcurio.TextAnnotator', {
                         currentRow = $('<div>').addClass('row').appendTo(labelsContainer);
                     }
                     var column = $('<div>').addClass('col').addClass(buttonColumnClass);
-                    var button = $('<button>').addClass('btn').addClass('multiple-choice-btn').val(label.replace(' ', '-')).html(label).attr('id', classType+'-'+label.replace(' ', '-')+'-btn');
+                    var button = $('<button>').addClass('btn').addClass('multiple-choice-btn').val(label.replace(' ', '-')).html(label).attr('id', nodes[i]+'-'+classType+'-'+label.replace(' ', '-')+'-btn');
                     column.append(button);
                     var definitionButton = $('<button id="'+classType+'-'+label.replace(' ', '-')+'-example" class="btn-floating waves-effect waves-light orange definition-button"><i class="fa fa-question" disabled></i></button>');
 
 
-var exampleContent = {
+                var exampleContent = {
                         'misleading relation' : '<div style="display: table-cell; width: 50%; background-color: #990000; color: black; padding: 20px;"><h3><b>Misleading Relation Label</b></h3> <hr><p>Based on the reference sentence, these entities <b>E1</b> and <b>E2</b> are directly related. That is, it\'s possible to write an independent clause  such that :<br><br></p><ol type="1"><li>the clause contains <b>E1</b> and <b>E2</b></li><li><b>E1</b> and <b>E2</b> appear in the same order as in <b>S</b></li><li><u>no external knowledge</u> is used to write this independent clause</li></ol><br>Also:<br><ol type="1"><li>While the relation label <b>RL</b> is readable, and looks like a valid relationship, once the reference sentence <b>S</b> is consulted it becomes evident that the label is misleading and not consistent with what is expressed by <b>S</b>.</li><li>It is often the case that critical parts of the relation label <b>RL</b> is missing or the actual relationship holds between other entities in that sentence and not between <b>E1</b> and <b>E2</b>.</li></ol><br><br>in the following examples, the <b style="color:white;">[white highlighted words]</b> are missing from the generated label:<br><br><div class="example">Constitution defines <b>[E1 President]</b> as the highest <b>[E2 state authority]</b> <b style="color:white;">[after the Supreme Leader]</b></div><br><div class="example"><b style="color:white;">[After being elected]</b> <b>[E1 president]</b> must be appointed by the <b>[E2 Supreme Leader]</b></div><br><p></p></div>',
 
                         'incomplete relation': '<div style="display: table-cell; background-color: #DA007F; color: black; padding: 20px;"><h3><b>Incomplete Relation Label</b></h3><hr><p>Based on the reference sentence, these entities <b>E1</b> and <b>E2</b> are directly related. That is, it\'s possible to write an independent clause  such that :<br><br></p><ol type="1"><li>the clause contains <b>E1</b> and <b>E2</b></li><li><b>E1</b> and <b>E2</b> appear in the same order as in <b>S</b></li><li><u>no external knowledge</u> is used to write this independent clause</li></ol><br>Also:<br><ol type="1"><li>The relation label <b>RL</b> is readable.</li><li>Critical parts of the relation label <b>RL</b> is missing.</li><li>As a result, by reading the label <b>RL</b> alone it is not possilbe to fully understand the relation between <b>E1</b> and <b>E2</b>.</li></ol><br><br>in the following examples, the <b style="color:white;">[white highlighted words]</b> are missing from the generated label:<br><br><div class="example"><b>[E1 mayor]</b> of Town <b style="color:white;">[of Niagara-on-the-Lake]</b> shall be known as the <b>[E2 Lord Mayor]</b></div><br><div class="example"><b>[E1 Constitution]</b> defines President <b style="color:white;">[as the highest state authority]</b> after the <b>[E2 Supreme Leader]</b></div><br><p></p></div>',
@@ -626,7 +628,9 @@ var exampleContent = {
                             </div> \
                         </div> \
                     ';
-                    $(that.element).append(content);
+                    if($("#"+classType+'-'+label.replace(' ', '-')+'-example-container').length === 0){
+                        exampleDivs += content;
+                    }
 
 
                     definitionButton.click(function(e) {
@@ -637,17 +641,21 @@ var exampleContent = {
                     });
                     column.append(definitionButton);
                     currentRow.append(column);
-                    var button = $('#'+classType+'-'+label.replace(' ', '-')+'-btn');
-                    button.click(function(event) {
-                        console.log("Clicked");
-                        event.preventDefault();
-                        $('.multiple-choice-btn').removeClass(activeButtonClass).addClass(inactiveButtonClass);
-
-                        button.addClass(activeButtonClass).removeClass(inactiveButtonClass);
-                    });
+                    var button = $('#'+nodes[i]+'-'+classType+'-'+label.replace(' ', '-')+'-btn');
+                    console.log("Adding handler for: "+'#'+nodes[i]+'-'+classType+'-'+label.replace(' ', '-')+'-btn');
                 });
             }
         }
+
+        $('.multiple-choice-btn').click(function(event) {
+            console.log("Clicked");
+            event.preventDefault();
+            $('.multiple-choice-btn').removeClass(activeButtonClass).addClass(inactiveButtonClass);
+            console.log("Event: ");
+            console.log(event);
+            console.log("ID: "+"#"+event.currentTarget.id);
+            $(event.target).addClass(activeButtonClass).removeClass(inactiveButtonClass);
+        });
 
         // 2. render the end-point containers
         var nodes = ['no-relation-node', 'indirect-relation-node','wrong-relation-node', 'incomplete-relation-node', 'misleading-relation-node','correct-relation-node', 'partially-unreadable-relation-node'];
@@ -676,6 +684,9 @@ var exampleContent = {
             ';
             $(that.element).append(content);
         }
+
+        // append example containers
+        $(that.element).append(exampleDivs);
         
     },
 
@@ -1276,6 +1287,7 @@ var exampleContent = {
         $(that.element).empty();
         that.logicPath = [];
         that.justification = "";
+        that.labelConfidence = "";
 
          // 2. render the base HTML containers
          if(that.options.config.mode === 'static'){
@@ -1426,6 +1438,8 @@ var exampleContent = {
             if(!($("input:radio[name='group1']").is(":checked"))){
                 swal('Error: You must indicate whether or not this category sounds good befoer submitting.');
                 return;
+            } else {
+                that.labelConfidence = $("input:radio[name='group1']:checked").attr('id');
             }
         }
 
@@ -1487,7 +1501,7 @@ var exampleContent = {
         // save a response through the api client
         var apiClient = that._getApiClient();
         apiClient.create('response', {
-                content: {'label': label, 'path': that.logicPath, 'justification': that.justification}
+                content: {'label': label, 'path': that.logicPath, 'justification': that.justification, 'confidence': that.labelConfidence}
             }, function(result){
                 that._resetInterface();
         });
