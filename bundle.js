@@ -1050,7 +1050,7 @@ var exampleContent = {
             } else { /// practice
                 if(choice === 'btn'){
                     if($(".multiple-choice-btn.teal").length > 0){
-                        choice = $(".multiple-choice--btn.teal").val().replace("-relation", '');
+                        choice = $(".multiple-choice-btn.teal").val().replace("-relation", '');
                         cur_node = 'missing-information-node-a';
                     } else {
                         swal("You must select a label before clicking next.");
