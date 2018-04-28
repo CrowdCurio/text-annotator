@@ -882,7 +882,7 @@ $.widget('crowdcurio.TextAnnotator', {
                                 content: "input",
                             })
                             .then((value) => {
-                                if(value !== null){
+                                if(value !== null && value.trim() !== ""){
                                     that.justification = value;
                                     $("#starter-node").hide();
                                     $("#no-relation-node").show();
@@ -894,6 +894,8 @@ $.widget('crowdcurio.TextAnnotator', {
                                     $('html, body').animate({
                                         scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
                                     }, 'slow');
+                                } else {
+                                    alert("ERROR: You must provide a response to the question to move forward.");
                                 }
                             });
                             return;
@@ -1102,7 +1104,7 @@ $.widget('crowdcurio.TextAnnotator', {
                                         content: "input",
                                     })
                                     .then((value) => {
-                                        if(value !== null){
+                                        if(value !== null && value.trim() !== ""){
                                             that.justification = value;
                                             $("#starter-node").hide();
                                             $("#no-relation-node").show();
@@ -1114,6 +1116,8 @@ $.widget('crowdcurio.TextAnnotator', {
                                             $('html, body').animate({
                                                 scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
                                             }, 'slow');
+                                        } else {
+                                            alert("ERROR: You must provide a response to the question to move forward.");
                                         }
                                     });
                                     return;
