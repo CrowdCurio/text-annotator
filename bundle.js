@@ -12,6 +12,7 @@ global.csrftoken = $("[name='csrfmiddlewaretoken']").val();
 var DEV = window.DEV;
 var task = window.task || -1;
 var user = window.user || -1;
+var hit_id = window.hit_id || "-1";
 var experiment = window.experiment || -1;
 var condition = window.condition|| -1;
 var containerId = window.container || 'task-container';
@@ -49,6 +50,7 @@ $.widget('crowdcurio.TextAnnotator', {
         that.logicPath = [];
         that.justification = "";
         that.labelConfidence = "";
+        that.justificationEnabled = false;
 
         // load up known data
         this.data = {
@@ -120,9 +122,16 @@ $.widget('crowdcurio.TextAnnotator', {
 
         // 1.5. make sure we have a mode set
         this.options.config.mode = this.options.config.mode || 'static'; // default to static
+        this.options.config.justification = this.options.config.jusification || 0;
         this.options.config.lab_study = this.options.config.lab_study || false; //
         this.options.config.total_tasks = 15; //
         this.options.config.total_tasks_practice = this.options.config.total_tasks_practice || 3;
+
+        // output justification status
+        // this.options.config.mode = 'static';
+        // this.options.config.justification = 1;
+        console.log("UI Mode: " + this.options.config.mode);
+        console.log("UI Justification: " + this.options.config.justification);
 
         this.state = 'practice';
 
@@ -877,28 +886,42 @@ $.widget('crowdcurio.TextAnnotator', {
                             $("#direct-relation-node").show();
                         } else if(choice === 'no'){
 
-                            swal("Write down at least 2 entities that appeared in S and are directly related based on this sentence.", {
-                                buttons: ["Cancel", true],
-                                content: "input",
-                            })
-                            .then((value) => {
-                                if(value !== null && value.trim() !== ""){
-                                    that.justification = value;
-                                    $("#starter-node").hide();
-                                    $("#no-relation-node").show();
+                            if(that.justificationEnabled){
+                                swal("Write down at least 2 entities that appeared in S and are directly related based on this sentence.", {
+                                    buttons: ["Cancel", true],
+                                    content: "input",
+                                })
+                                .then((value) => {
+                                    if(value !== null && value.trim() !== ""){
+                                        that.justification = value;
+                                        $("#starter-node").hide();
+                                        $("#no-relation-node").show();
 
-                                    // save the choice
-                                    that.logicPath.push(choice);
+                                        // save the choice
+                                        that.logicPath.push(choice);
 
-                                    // scroll to the top
-                                    $('html, body').animate({
-                                        scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
-                                    }, 'slow');
-                                } else {
-                                    alert("ERROR: You must provide a response to the question to move forward.");
-                                }
-                            });
-                            return;
+                                        // scroll to the top
+                                        $('html, body').animate({
+                                            scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+                                        }, 'slow');
+                                    } else {
+                                        alert("ERROR: You must provide a response to the question to move forward.");
+                                    }
+                                });
+                                return;
+                            } else {
+                                that.justification = 'JUSTIFICATION-OFF';
+                                $("#starter-node").hide();
+                                $("#no-relation-node").show();
+
+                                // save the choice
+                                that.logicPath.push(choice);
+
+                                // scroll to the top
+                                $('html, body').animate({
+                                    scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+                                }, 'slow');
+                            }
                         }
                         break;
                     // No Relation    
@@ -1099,27 +1122,41 @@ $.widget('crowdcurio.TextAnnotator', {
                                     $("#direct-relation-node").show();
                                 } else if(choice === 'no'){
         
-                                    swal("Write down at least 2 entities that appeared in S and are directly related based on this sentence.", {
-                                        buttons: ["Cancel", true],
-                                        content: "input",
-                                    })
-                                    .then((value) => {
-                                        if(value !== null && value.trim() !== ""){
-                                            that.justification = value;
-                                            $("#starter-node").hide();
-                                            $("#no-relation-node").show();
-        
-                                            // save the choice
-                                            that.logicPath.push(choice);
-        
-                                            // scroll to the top
-                                            $('html, body').animate({
-                                                scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
-                                            }, 'slow');
-                                        } else {
-                                            alert("ERROR: You must provide a response to the question to move forward.");
-                                        }
-                                    });
+                                    if(that.justificationEnabled){
+                                        swal("Write down at least 2 entities that appeared in S and are directly related based on this sentence.", {
+                                            buttons: ["Cancel", true],
+                                            content: "input",
+                                        })
+                                        .then((value) => {
+                                            if(value !== null && value.trim() !== ""){
+                                                that.justification = value;
+                                                $("#starter-node").hide();
+                                                $("#no-relation-node").show();
+            
+                                                // save the choice
+                                                that.logicPath.push(choice);
+            
+                                                // scroll to the top
+                                                $('html, body').animate({
+                                                    scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+                                                }, 'slow');
+                                            } else {
+                                                alert("ERROR: You must provide a response to the question to move forward.");
+                                            }
+                                        });
+                                    } else {
+                                        that.justification = "JUSTIFICATION-OFF";
+                                        $("#starter-node").hide();
+                                        $("#no-relation-node").show();
+    
+                                        // save the choice
+                                        that.logicPath.push(choice);
+
+                                        // scroll to the top
+                                        $('html, body').animate({
+                                            scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+                                        }, 'slow');
+                                    }
                                     return;
                                 }
                                 break;
@@ -1440,9 +1477,11 @@ $.widget('crowdcurio.TextAnnotator', {
     _submitResponse: function(e){
         var that = this;      
         var label = e.currentTarget.id.replace('-submit-btn', '').replace('-node', '').replace('_label', '').replace('_', '-');
+        var isStatic = false;
 
         // if label is static, it means we aren't using the workflow design
         if(label === 'static'){
+            isStatic = true;
             label = that.current_label;
             if(label === undefined){
                 swal('Error: You must select a label before submitting.');
@@ -1456,69 +1495,145 @@ $.widget('crowdcurio.TextAnnotator', {
                 that.labelConfidence = $("input:radio[name='group1']:checked").attr('id');
             }
         }
-
+        
         console.log("Trying to submit ...");
+        if(that.current_label ==="No Relation"){
+            swal("Write down at least 2 entities that appeared in S and are directly related based on this sentence.", {
+                buttons: ["Cancel", true],
+                content: "input",
+            })
+            .then((value) => {
+                if(value !== null && value.trim() !== ""){
+                    that.justification = value;
+                    
+                    // Get toast DOM Element, get instance, then call remove function
+                    if($('.toast').length){
+                        var toastElement = $('.toast').first()[0];
+                        var toastInstance = toastElement.M_Toast;
+                        toastInstance.remove();
+                    }
 
-         // Get toast DOM Element, get instance, then call remove function
-        if($('.toast').length){
-            var toastElement = $('.toast').first()[0];
-            var toastInstance = toastElement.M_Toast;
-            toastInstance.remove();
-        }
+                    if(that.state === 'practice' && this.options.config.mode == 'static'){
+                        var correct_answer = $("#correct_answer").text();
+                        var correct_explanation = $("#correct_explanation").html().replace("&lt;br/&gt;", "<br/>");
 
-        if(that.state === 'practice' && this.options.config.mode == 'static'){
-            var correct_answer = $("#correct_answer").text();
-            var correct_explanation = $("#correct_explanation").html().replace("&lt;br/&gt;", "<br/>");
+                        var correct = that.current_label.toLowerCase();
+                        var current = correct_answer;
+                        if(correct === current){
+                            Materialize.toast(correct_explanation+"<br/><br/> Good job! That's correct. :D", 30000, 'rounded')
+                        } else {
+                            Materialize.toast(correct_explanation+"<br/><br/> Try again. That's incorrect. :(", 30000, 'rounded')
+                            return;
+                        }
+                    }
 
-            var correct = that.current_label.toLowerCase();
-            var current = correct_answer;
-            if(correct === current){
-                Materialize.toast(correct_explanation+"<br/><br/> Good job! That's correct. :D", 30000, 'rounded')
-            } else {
-                Materialize.toast(correct_explanation+"<br/><br/> Try again. That's incorrect. :(", 30000, 'rounded')
-                return;
-            }
-        }
+                    // scroll to the top
+                    $('html, body').animate({
+                        scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+                    }, 'slow');
 
-        // scroll to the top
-        $('html, body').animate({
-            scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
-        }, 'slow');
+                    // in local storage, store:
+                    // entity1,entity2,RL,S,label1,label2,label3
+                    var labelHistory;
+                    var dataRecords
+                    if(window.localStorage.getItem("labelHistory") === null){
+                        labelHistory = {};
+                        dataRecords = {};
+                    } else {
+                        labelHistory = JSON.parse(window.localStorage.getItem("labelHistory"));
+                        dataRecords = JSON.parse(window.localStorage.getItem("dataRecords"));
+                    }
 
-        // in local storage, store:
-        // entity1,entity2,RL,S,label1,label2,label3
-        var labelHistory;
-        var dataRecords
-        if(window.localStorage.getItem("labelHistory") === null){
-            labelHistory = {};
-            dataRecords = {};
+                    if(!(that.instanceId in labelHistory)){
+                        labelHistory[that.instanceId] = [];
+                    }
+                    if(!(that.instanceId in dataRecords)){
+                        dataRecords[that.instanceId] = that.instanceData;
+                    }
+
+                    // add the label the history
+                    labelHistory[annotator.instanceId].push(label)
+
+                    // save
+                    window.localStorage.setItem('labelHistory', JSON.stringify(labelHistory));
+                    window.localStorage.setItem('dataRecords', JSON.stringify(dataRecords));
+                    window.localStorage.setItem('lastLabel', JSON.stringify(label));
+
+                    // save a response through the api client
+                    var apiClient = that._getApiClient();
+                    apiClient.create('response', {
+                            content: {'label': label, 'path': that.logicPath, 'justification': that.justification, 'confidence': that.labelConfidence}
+                        }, function(result){
+                            that._resetInterface();
+                    });
+                } else {
+                    alert("ERROR: You must provide a response to the question to move forward.");
+                }
+            });
         } else {
-            labelHistory = JSON.parse(window.localStorage.getItem("labelHistory"));
-            dataRecords = JSON.parse(window.localStorage.getItem("dataRecords"));
+            that.justification = 'JUSTIFICATION-OFF';
+            
+            // Get toast DOM Element, get instance, then call remove function
+            if($('.toast').length){
+                var toastElement = $('.toast').first()[0];
+                var toastInstance = toastElement.M_Toast;
+                toastInstance.remove();
+            }
+
+            if(that.state === 'practice' && this.options.config.mode == 'static'){
+                var correct_answer = $("#correct_answer").text();
+                var correct_explanation = $("#correct_explanation").html().replace("&lt;br/&gt;", "<br/>");
+
+                var correct = that.current_label.toLowerCase();
+                var current = correct_answer;
+                if(correct === current){
+                    Materialize.toast(correct_explanation+"<br/><br/> Good job! That's correct. :D", 30000, 'rounded')
+                } else {
+                    Materialize.toast(correct_explanation+"<br/><br/> Try again. That's incorrect. :(", 30000, 'rounded')
+                    return;
+                }
+            }
+
+            // scroll to the top
+            $('html, body').animate({
+                scrollTop: $('#task-container').offset().top - 70 //#DIV_ID is an example. Use the id of your destination on the page
+            }, 'slow');
+
+            // in local storage, store:
+            // entity1,entity2,RL,S,label1,label2,label3
+            var labelHistory;
+            var dataRecords
+            if(window.localStorage.getItem("labelHistory") === null){
+                labelHistory = {};
+                dataRecords = {};
+            } else {
+                labelHistory = JSON.parse(window.localStorage.getItem("labelHistory"));
+                dataRecords = JSON.parse(window.localStorage.getItem("dataRecords"));
+            }
+
+            if(!(that.instanceId in labelHistory)){
+                labelHistory[that.instanceId] = [];
+            }
+            if(!(that.instanceId in dataRecords)){
+                dataRecords[that.instanceId] = that.instanceData;
+            }
+
+            // add the label the history
+            labelHistory[annotator.instanceId].push(label)
+
+            // save
+            window.localStorage.setItem('labelHistory', JSON.stringify(labelHistory));
+            window.localStorage.setItem('dataRecords', JSON.stringify(dataRecords));
+            window.localStorage.setItem('lastLabel', JSON.stringify(label));
+
+            // save a response through the api client
+            var apiClient = that._getApiClient();
+            apiClient.create('response', {
+                    content: {'label': label, 'path': that.logicPath, 'justification': that.justification, 'confidence': that.labelConfidence}
+                }, function(result){
+                    that._resetInterface();
+            });
         }
-
-        if(!(that.instanceId in labelHistory)){
-            labelHistory[that.instanceId] = [];
-        }
-        if(!(that.instanceId in dataRecords)){
-            dataRecords[that.instanceId] = that.instanceData;
-        }
-
-        // add the label the history
-        labelHistory[annotator.instanceId].push(label)
-
-        // save
-        window.localStorage.setItem('labelHistory', JSON.stringify(labelHistory));
-        window.localStorage.setItem('dataRecords', JSON.stringify(dataRecords));
-        window.localStorage.setItem('lastLabel', JSON.stringify(label));
-
-        // save a response through the api client
-        var apiClient = that._getApiClient();
-        apiClient.create('response', {
-                content: {'label': label, 'path': that.logicPath, 'justification': that.justification, 'confidence': that.labelConfidence}
-            }, function(result){
-                that._resetInterface();
-        });
     },
 
     _parseLabelHistory: function(){
@@ -2091,15 +2206,17 @@ $.widget('crowdcurio.TextAnnotator', {
     }
 });
 
-},{"d3":6,"hammerjs":7,"jquery":10,"jquery-ui-browserify":9,"materialize-css":11,"sweetalert":15}],3:[function(require,module,exports){
+},{"d3":7,"hammerjs":8,"jquery":11,"jquery-ui-browserify":10,"materialize-css":12,"sweetalert":16}],3:[function(require,module,exports){
 var TaskRoutingManager = require('./task-router');
 var TaskSession = require('./task-session');
+var HelpRequest = require('./help-request');
 
 function CrowdCurioClient(){
     // core api vars
     this.auth = null;
     this.client = null;
     this.task_session = null;
+    this.help_request = null;
 
     // routing manager
     this.router = null;
@@ -2129,37 +2246,77 @@ CrowdCurioClient.prototype.init = function(params, delay_connect){
         if(params['experiment'] !== undefined && params['experiment'] > 0){
             that.experiment = {id: params['experiment'], type: 'Experiment'}
             that.condition = {id: params['condition'], type: 'Condition'}
-
-            that.router.init(that.client, {
-                'page_size': 3,
-                'task': params['task'],
-                'experiment': params['experiment'],
-                'condition': params['condition']
-            });
-
+            if(window.dejavu=='True'){
+                that.router.init(that.client, {
+                    'page_size': window.image_num_per_set-1,//each queue of tasks contains 9 unique images where one of them is duplicated for Dejavu
+                    'task': params['task'],
+                    'experiment': params['experiment'],
+                    'condition': params['condition'],
+                 });
+            }else{
+                that.router.init(that.client, {
+                    'page_size': window.image_num_per_set,
+                    'task': params['task'],
+                    'experiment': params['experiment'],
+                    'condition': params['condition'],
+                 });
+            }
         } else {
             that.experiment = null;
+            if(window.dejavu=='True'){
+                that.router.init(that.client, {
+                    'page_size': window.image_num_per_set-1,//same as above
+                    'task': params['task'],
+                 });
+            }else{
+                that.router.init(that.client, {
+                    'page_size': window.image_num_per_set,
+                    'task': params['task'],
+                 });
+            }
             
-            that.router.init(that.client, {
-                'page_size': 3,
-                'task': params['task']
-            });
         }
 
         // if collaboration is active, create and initialize a task session and wait to resolve the promise until the task session has been initialized
         // Note: if collaboration is "delayed", then the interface needs to call
         // client.task_session.connect() before using TaskSession features
         if(params['configuration']['collaboration']){
-            var collab_active = params['configuration']['collaboration']['active'];
-            if(collab_active){
-                that.task_session = new TaskSession();
-                that.task_session.init(jQuery.extend({ 'client': that.client}, params), delay_connect).then(function(){
-                    resolve();
-                });
+            if(params['configuration']['collaboration']['active']){
+                
+                if(params['configuration']['collaboration']['automatic']) {
+                    that.task_session = new TaskSession();
+                    that.task_session.init(jQuery.extend({'client': that.client}, params)).then(function(){
+                        console.log(that.task_session.task_session);
+                        that.task_session.connect(that.task_session.task_session);
+                        resolve();
+                    });
+                    
+                } else {
+               
+                    that.task_session = new TaskSession();
+                    that.task_session.init(jQuery.extend({'client': that.client}, params)).then(function(){
+
+                        console.log(that.task_session.task_session);
+                        if(params["taskSession"]) {
+                            that.task_session.connect(params["taskSession"]);
+                        } else {
+                        that.task_session.connect(that.task_session.task_session);
+                        }
+
+                        resolve();
+
+                    });
+                    
+                    that.help_request = new HelpRequest();
+                    that.help_request.init(jQuery.extend({"client":that, 'apiClient': that.client, 'task_session': that.task_session}, params));
+                    console.log("FML");
+                }
+                
             }
         } else {
             resolve();
         }
+        
     }.bind(this));
 }
 
@@ -2167,10 +2324,15 @@ CrowdCurioClient.prototype.setData = function(id){
     this.data = {id: id, type: 'Data'};
 }
 
+
 CrowdCurioClient.prototype.getNextTask = function(queue_type, callback){
     var that = this;
+    
+    console.log("Routing: " + queue_type);
     // call the router's get next task function.
     this.router.getNextTask(queue_type, function(task){
+        console.log("Returned:")
+        console.log(task);
         // if no task was returned from the API, return an empty object
         if(task === undefined){
             callback({});
@@ -2189,6 +2351,15 @@ CrowdCurioClient.prototype.getNextTask = function(queue_type, callback){
 // delete is supported for all models
 CrowdCurioClient.prototype.create = function(model, params, callback){
     var that = this;
+
+    // handle annotations made outside of a task session
+    var tsInstance = null;
+    if(that.task_session){
+        if(that.task_session.task_session){
+            tsInstance = {id: that.task_session.task_session, type: 'TaskSession'};
+        }
+    }
+
     // extend params by adding relations
     if(model === 'response'){
         params = jQuery.extend({
@@ -2211,7 +2382,7 @@ CrowdCurioClient.prototype.create = function(model, params, callback){
             task: that.task,
             experiment: that.experiment,
             condition: that.condition,
-            task_session: {id: that.task_session.task_session, type: 'TaskSession'},
+            task_session: tsInstance,
             updated_by: that.user
         }, params);
     }
@@ -2230,10 +2401,15 @@ CrowdCurioClient.prototype.update = function(model, params, callback){
         }, params);
     }
 
-    let action = [model, "update"];
-    this.client.action(schema, action, params).then(function(result) {
-        callback(result);
-    });
+    try{
+        let action = [model, "update"];
+        this.client.action(schema, action, params).then(function(result) {
+            callback(result);
+        });
+    }catch(err) {
+        console.log("null action error caught and handled.")
+    }
+
 }
 
 CrowdCurioClient.prototype.partialUpdate = function(model, params, callback){
@@ -2307,7 +2483,991 @@ CrowdCurioClient.prototype.delete = function(model, params, callback){
 
 
 module.exports = CrowdCurioClient;
-},{"./task-router":4,"./task-session":5}],4:[function(require,module,exports){
+
+},{"./help-request":4,"./task-router":5,"./task-session":6}],4:[function(require,module,exports){
+var jQuery = require('jquery');
+var $ = jQuery;
+require('jquery-ui-browserify');
+
+var ReconnectingWebSocket = require('reconnectingwebsocket');
+var TaskSession = require('./task-session');
+
+function getCookie(cname) {
+    var name = cname;
+    var decodedCookie = decodeURIComponent(document.cookie);
+    console.log(decodedCookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var cookie = ca[i].split("=")
+        console.log(cookie);
+        if(cookie[0].replace(/^\s+|\s+$/g, '') === cname){
+            return cookie[1];
+        }
+    }
+    return "";
+}
+
+Array.prototype.diff = function (a) {
+    return this.filter(function (i) {
+        return a.indexOf(i) === -1;
+    });
+};
+
+function print(message){
+    var currentDate = '[' + new Date().toUTCString() + '] ';
+    console.log(currentDate+message)
+}
+
+function xhttpPOSTRequest(path, message) {
+    
+    var xhttp;    
+    xhttp=new XMLHttpRequest();
+    
+    //console.log(xhttp);
+    //console.log(getCookie(csrftoken));
+    xhttp.open("POST", path, false);
+    xhttp.setRequestHeader('X-CSRFToken', getCookie("csrftoken"), false);
+    // TODO: setup proper csrf
+    xhttp.send(message);
+    console.log(xhttp);
+    return xhttp;
+}
+
+function xhttpGETRequest(path, message) {
+
+    var xhttp;
+    xhttp=new XMLHttpRequest();
+
+    //console.log(xhttp);
+    //console.log(getCookie(csrftoken));
+    xhttp.open("GET", path, false);
+    xhttp.setRequestHeader('X-CSRFToken', getCookie("csrftoken"), false);
+    // TODO: setup proper csrf
+    xhttp.send(message);
+    console.log(xhttp);
+    return xhttp;
+}
+
+function tab(id) {
+
+    document.getElementById("help-request-container").style.display = "none";
+    document.getElementById("help-request-button-container").style.display = "none";
+    document.getElementById("help-request-create-container").style.display = "none";
+    document.getElementById("help-request-resolve-container").style.display = "none";
+
+    if(id === "help-request-container") {
+        document.getElementById("help-request-container").style.display = "block";
+        document.getElementById("help-request-button-container").style.display = "block";
+    } else {
+        document.getElementById(id).style.display = "block";
+    }
+}
+
+
+HelpRequest.prototype.getFocus = function() {
+    return this.focus
+}
+
+
+/**
+ * Sets the focus for the current Help Request. Will not work if not connected to a help request
+ *
+ * params:
+ *      element: the object/data you want to set as focus
+ */
+HelpRequest.prototype.setFocus = function(element) {
+
+    this.task_session.socket.send(JSON.stringify({
+        "command": "odh_set_focus",
+        "help_request": this.help_request.id,
+        "focus": element
+    }));
+
+}
+
+/*
+ * Handles the reply whenever a focus change event is sent by the server
+ */
+HelpRequest.prototype.setFocusOnReply = function(helpRequest) {
+
+    return function(message) {
+        var data = message.payload.message;
+        helpRequest.focus = data;
+        console.log(data);
+
+    }
+
+}
+
+/*
+ * Creates a new help Request with channel name: t(task_id)e(experiment_id)u(user_id)r(random #)
+ *
+ * params:
+ * {
+ *     "name": question/name for the help request
+ *     "summary": subtitle for the help request
+ * }
+ */
+HelpRequest.prototype.createHelpRequest = function(params) {
+    var that = this;
+
+    var random = Math.floor(Math.random()*1000000);
+    
+    // make the task session
+    var channel_name = "t" + that.task.id + "e" + that.experiment.id + "u" + that.user.id + "r" + random;
+    that.task_session.create(channel_name).then((message) => {
+
+        // make the help request
+        console.log("creating help_request");
+        console.log({
+            "command": "odh_create",
+            "channel_name": channel_name,
+            "task_session": message,
+            "task": that.task.id,
+            "experiment": that.experiment.id,
+            "random": random,
+            "name": params["name"],
+            "summary": params["summary"],
+            "message": $("#chat-input-box").val().trim()
+        });
+        that.task_session.socket.send(JSON.stringify({
+            "command": "odh_create",
+            "channel_name": channel_name,
+            "task_session": message,
+            "task": that.task.id,
+            "experiment": that.experiment.id,
+            "random": random,
+            "name": params["name"],
+            "summary": params["summary"],
+            "message": $("#chat-input-box").val().trim()
+        }));
+
+        console.log(message);
+
+    });
+    
+}
+
+/**
+ * handle the response from the server when a help request is created
+ *
+ * NOTE: This code clears "#help-request-container"
+ *
+ *
+"text": json.dumps({
+    "msg_type": 30,
+    "payload": {
+        'task_session': str(ts.id),
+        'message': {
+            "type": "HelpRequest",
+            "help_request": {
+                "id": hr.id,
+                "task_session": {
+                    "id": ts.id,
+                    "channel_name": ts.channel_name
+                }
+            },
+            "user": message.user.id,
+        },
+        'username': message.user.username,
+    }
+}),
+*/
+HelpRequest.prototype.CreateHelpRequestOnReply = function(helpRequest) {
+
+    return function(message) {
+
+        var data = message.payload.message;
+        console.log(message);
+
+        // If the current user made the request, automatically switch task sessions
+        if(data.user == helpRequest.user.id) {
+
+            console.log("Finished Creating Help Request");
+
+            // Delete/leave old task request
+            console.log("Leaving old help Request");
+
+            helpRequest.joinHelpRequest(
+                helpRequest,
+                data.help_request.task_session.id,
+                data.help_request.task_session.channel_name,
+                data.help_request);
+
+        // otherwise, notify the other users
+        } else {
+
+            alert(message.payload.username + " has made a request for help");
+
+            $("#help-request-container").text("");
+            helpRequest.page_number = 1;
+            helpRequest.list({}, function(message) {
+                fillList(message, request_container, that);
+                helpRequest.page_number += 1;
+            });
+
+        }
+    }
+}
+
+
+/**
+ * Lists the HelpRequests related to the task/experiment
+ * 
+ * @param: task
+ * @param: experiment
+ * @param: condition
+ * @param: focus
+ */
+HelpRequest.prototype.list = function(params, callback) {
+    var that = this;
+
+    params = jQuery.extend({
+        task: that.task.id,
+        experiment: that.experiment.id,
+    }, params);
+
+    /* OLD method using API
+    let action = ['helprequest', "list"];
+    this.apiClient.action(schema, action, params).then(function(result) {
+        callback(result);
+    });
+    */
+
+    // Send request for list to server
+    params = jQuery.extend({
+        "task_session": that.task_session.task_session.id,
+        "command": "odh_list",
+    }, params);
+
+    that.task_session.socket.send(JSON.stringify(params));
+}
+
+/**
+ * Handles the server's response to list
+ */
+HelpRequest.prototype.listOnReply = function(helpRequest){
+
+    return function(message){
+
+        console.log(message);
+
+        helpRequest.requestList = message.payload.message;
+
+        var list = document.getElementById("help-request-container");
+
+        if(list) {
+            fillList(message.payload.message, list, helpRequest);
+        }
+
+    }
+}
+
+
+
+/**
+ * Joins a current help Request
+ * 
+ * NOTE: make sure to set tasK_channel.channel_name
+ * 
+ * @param: help_request: object
+ * @param: task_session: id
+ * @param: channel_name: channel name
+ * @param: help_request: {id:int}
+ * 
+ */
+HelpRequest.prototype.joinHelpRequest = function(helpRequest, task_session, channel_name, help_request_data) {
+    var that = this;
+
+    // Delete/leave old task request
+    console.log("Leaving old help Request");
+    console.log(helpRequest);
+    helpRequest.task_session.socket.close(code=1000, reason="Changing session",{keepClosed: true});
+
+    var element = document.getElementById("chats");
+    element.outerHTML = "";
+    delete element;
+
+    // Join the Help Request by creating a new task session object
+
+    // Prep variables
+    helpRequest.client.task_session = new TaskSession();
+    var params = {"user": helpRequest.user.id, "task": helpRequest.task.id};
+    if(helpRequest.experiment){
+        params = jQuery.extend({'experiment': helpRequest.experiment.id}, params);
+    }
+    if(helpRequest.condition){
+        params = jQuery.extend({'condition': helpRequest.condition.id}, params);
+    }
+
+    params = jQuery.extend({'client': helpRequest.apiClient}, params);
+
+    // init new task session
+    helpRequest.client.task_session.init(params).then(function(){
+
+        // if we don't have task_session passed in as a parameter, we will join the normal matchmaking server
+        if(!task_session) {
+            task_session = helpRequest.client.task_session.task_session;
+        }
+
+        // update task session info
+        helpRequest.client.task_session.task_session = {id: task_session, type: "TaskSession"};
+        if(channel_name!=null) {
+            helpRequest.client.task_session.channel_name = channel_name;
+        }
+        helpRequest.client.task_session.id = task_session;
+
+
+        // update help request info
+        helpRequest.help_request = help_request_data;
+
+
+        // assign event handlers
+        handlers = {
+
+            "odhCreated": helpRequest.CreateHelpRequestOnReply(helpRequest),
+            "odhResolved": helpRequest.resolveOnReply(helpRequest),
+            "odhSetFocus": helpRequest.setFocusOnReply(helpRequest),
+            "odhList": helpRequest.listOnReply(helpRequest),
+
+        }
+        helpRequest.client.task_session.setListeners(handlers);
+
+        // connect
+        helpRequest.task_session = helpRequest.client.task_session;
+
+        console.log("Joining new Help Request")
+        helpRequest.task_session.connect(task_session);
+
+        // grab current focus
+        var message = xhttpPOSTRequest('/onDemandHelp/focus/', JSON.stringify({"help_request": helpRequest.help_request.id}));
+
+        var focus = JSON.parse(message.response);
+
+        helpRequest.focus = focus["focus"];
+        console.log(focus);
+
+    });
+
+    $("#help-request-container").text("");
+    helpRequest.page_number = 1;
+    helpRequest.list({}, function(message) {
+        fillList(message, request_container, that);
+        helpRequest.page_number += 1;
+    });
+
+}
+
+
+
+/**
+ * Resolves the help Request
+ *
+ * callback: function
+ */
+HelpRequest.prototype.resolveHelpRequest = function(callback = null) {
+
+    var that = this;
+    var params = {
+        "command": "odh_resolve",
+        "help_request": that.help_request.id,
+        "task": that.task.id,
+        "experiment": that.experiment.id
+    }
+
+    console.log(params);
+
+    that.task_session.socket.send(JSON.stringify(params));
+    console.log("message sent");
+
+    if(callback) {
+        callback();
+    }
+
+}
+
+/**
+ * Handles the server's reply to a resolved help request
+ *
+ */
+HelpRequest.prototype.resolveOnReply = function(helpRequest) {
+
+    return function(message) {
+
+        var data = message.payload.message;
+        console.log(message);
+        console.log("Resolved Help Request");
+
+        // If in the current help request, then go back to the matchmaking task session
+        if(data.helpRequest == helpRequest.help_request.id) {
+
+            helpRequest.joinHelpRequest(helpRequest, null, null, -1);
+
+            helpRequest.needsResolving = false;
+
+        }
+
+    }
+
+}
+
+// Leave, Core API?
+/*
+ * Doesn't do anything
+ */
+HelpRequest.prototype.leaveHelpRequest = function(callback) {
+    var that = this;
+    print("Disconnected from chat socket");
+    that.task_session.socket.send(JSON.stringify({
+        "command": "odh_leave",  // determines which handler will be used (see chat/routing.py)
+        "task_session": that.task_session.id,
+        "task": that.task.id,
+        "experiment": that.experiment.id
+    }));
+    console.log("cookies:" + document.cookie);
+    console.log("csrf:" + getCookie("csrftoken"));
+    
+    xhttpRequest('/onDemandHelp/' + that.help_request.id + "/leave/", null);
+    
+}
+
+/**
+ * Sets up all the required internal variables in a help request object
+ * 
+ * @param: user
+ * @param: task
+ * @param: experiment
+ * @param: condition
+ */
+HelpRequest.prototype.init = function(params, callback) {
+    var that = this;
+    
+    
+    // append to CSS
+
+    var style=document.createElement('style');
+    style.type='text/css';
+    if(style.styleSheet){
+        style.styleSheet.cssText=CSS;
+    }else{
+        style.appendChild(document.createTextNode(CSS));
+    }
+    document.getElementsByTagName('head')[0].appendChild(style);
+
+    // Set up VARS
+    that.apiClient = params['apiClient'];
+    that.client = params["client"];
+    
+    // get Task, Experiment, Condition info.
+
+    // set (1) task and (2) experiment vars
+    that.user = {id: params['user'], type: 'User'};
+    that.task = {id: params['task'], type: 'Task'};
+    if(params['experiment']){
+        that.experiment = {id: params['experiment'], type: 'Experiment'}
+    } else {
+        that.experiment = null;
+    }
+    if(params["condition"]) {
+        that.condition  = {id: params["condition"], type: "Condition"}
+    } else {
+        that.condition = null;
+    }
+    
+    // make a taskSession
+    that.task_session = params['task_session'];
+    /*
+    that.task_session = new TaskSession();
+    
+    that.task_session.init(params).then(function(){
+        resolve();
+    });
+    */
+
+    that.help_request = {id: 0}
+
+    // handle assigning handlers
+    handlers = {
+
+        "odhCreated": that.CreateHelpRequestOnReply(that),
+        "odhResolved": that.resolveOnReply(that),
+        "odhSetFocus": that.setFocusOnReply(that),
+        "odhList": that.listOnReply(that),
+
+    }
+
+    that.task_session.setListeners(handlers);
+
+    if(callback){
+        callback(that);
+    }
+}
+
+
+/**
+ * For pre-built module
+ *
+ * element: a jquery object that the window will be attached to
+ */
+
+HelpRequest.prototype.buildCore = function(element) {
+    var that = this;
+    
+    var hr_container = $('<div>')
+        .attr('id', "help-request")
+        .attr("class", "help-request-main")
+        .appendTo(element);
+
+    var moarDivs = $("<div>")
+        .appendTo(hr_container);
+
+    // This container holds all of the help requests
+    var request_container = $('<div>')
+        .attr('id', "help-request-container")
+        .attr("class", "help-request-container")
+        .appendTo(moarDivs);
+
+    var request_container_js = document.getElementById('help-request-container');
+    request_container_js.style.display = "none";
+    request_container_js.style.overflow = "auto";
+    request_container_js.style.height = "200px";
+    
+        // Create container that holds buttons
+    var button_container = $('<div>')
+        .attr('id', "help-request-button-container")
+        .attr('class', "help-request-button-container")
+        .appendTo(moarDivs);
+        document.getElementById('help-request-button-container').style.display = "none";
+
+    // Create button for making new requests
+    console.log("Creating form button");
+    
+    var create_new_button = $("<i>")
+        .attr("id", "help-request-create")
+        .attr("class", "fa fa-sticky-note-o help-request-button")
+        .appendTo(button_container);
+
+    var refresh_button = $("<i>")
+        .attr("class", "fa fa-refresh help-request-refresh-button")
+        .attr("id", "help-request-refresh-button")
+        .appendTo(button_container);
+    
+        
+    // Create the create form
+    console.log("Creating form for help request creation");
+    
+    var create_container = $('<div>')
+        .attr('id', "help-request-create-container")
+        .attr('class', "help-request-create-container")
+        .appendTo(hr_container);
+    document.getElementById('help-request-create-container').style.display = "none";
+    
+    $("<a>")
+        .text("Question")
+        .appendTo(create_container);
+    
+    var nameForm = $("<input>")
+        .attr("type", "text")
+        .attr("id", "help-request-name")
+        .appendTo(create_container);
+
+    var returnButton = $("<i>")
+        .attr("id", "help-request-return-button")
+        .attr("class", "fa fa-mail-reply")
+        .appendTo(create_container);
+        
+    var submitCreate = $("<i>")
+        .attr("id", "help-request-submit")
+        .attr("class", "fa fa-sticky-note-o")
+        .appendTo(create_container);
+
+    // Create the resolve button container
+    console.log("Creating form for resolution acceptance")
+
+    var resolve_container = $('<div>')
+        .attr('id', "help-request-resolve-container")
+        .attr('class', "help-request-resolve-container center-align")
+        .appendTo(hr_container);
+    document.getElementById("help-request-resolve-container").style.display = "none";
+
+    var resolveButton = $("<a>")
+        .attr("type", "button")
+        .attr('class', "waves-effect waves-light btn help-request-resolve-button")
+        .text("Resolved")
+        .appendTo(resolve_container)
+
+    // Setup scroll function
+    /** DEPRECATED useful in future if paging will be used
+    request_container_js.addEventListener('scroll', function(event) {
+        var element = event.target;
+        if (element.scrollHeight - element.scrollTop === element.clientHeight) {
+            console.log('scrolled');
+            that.list({page: that.page_number}, function(message) {
+                fillList(message, request_container, that);
+            });
+            that.page_number += 1;
+        }
+    });
+    */
+    
+    // Hides the list, and shows the create form
+    create_new_button.click(function(){
+        tab('help-request-create-container');
+    });
+   
+    // Submit creation
+    submitCreate.click(function() {
+        createAndJoinHR(that);
+    });
+    
+    // Return to the original list
+    returnButton.click(function() {
+        tab('help-request-container');
+    });
+    
+    
+    // Refreshes the list
+    refresh_button.click(function() {
+        $("#help-request-container").text("");
+        that.page_number = 1;
+        that.list({}, function(message) {
+            fillList(message, request_container, that);
+            that.page_number += 1;
+        });
+    });
+
+    resolveButton.click(function(){
+        console.log("Attempting to resolve Help Request")
+        that.resolveHelpRequest();
+        tab('help-request-container');
+    });
+}
+
+/**
+ * Creates a generic menu for HelpRequest functionality
+ *
+ */
+HelpRequest.prototype.build = function() {
+
+    var that = this
+    
+    // Make containers
+    var main = $("main");
+    
+    that.buildCore(main);
+    
+    console.log("building containers");
+    
+    var hr_container = $("#help-request");
+    
+    // Make the header
+    var help_request_header = $("<div>")
+        .attr("id", "help-request-header")
+        .attr("class", "help-request-header")
+        .appendTo(hr_container);
+    
+    var hide_button = $("<div>")
+        .text("Help Requests")
+        .attr("class", "help-request-hide-button")
+        .appendTo(help_request_header);
+    
+        
+    
+    // Setup Hide Button
+    console.log("Setting up hide button");
+    
+    hide_button.click(function() {
+        var request_container = $("#help-request-container");
+        // if request_container is displayed, or create_container is displayed, hide all
+        if(document.getElementById('help-request-container').style.display === "block"
+            || document.getElementById('help-request-create-container').style.display === "block"
+        ){
+            document.getElementById('help-request-container').style.display = "none";
+            document.getElementById('help-request-button-container').style.display = "none";
+            document.getElementById('help-request-create-container').style.display = "none";
+        } else {
+
+            if(that.needsResolving) {
+
+                if(document.getElementById('help-request-resolve-container').style.display === "none") {
+                    tab('help-request-resolve-container');
+                } else {
+                    document.getElementById('help-request-resolve-container').style.display = "none";
+                }
+
+
+            } else {
+
+                // fill the list and show the request container
+                if (!$("#help-request-container").text()) {
+                    that.list({}, function(message) {
+                        console.log(message);
+                        fillList(message, request_container, that);
+                        that.page_number += 1;
+                    });
+                }
+                tab('help-request-container');
+            }
+        }
+    });
+    
+    
+}
+
+/**
+ * Fills a container with help request info
+ *
+ * @param data an array of HelpRequest
+ * @param table The table to fill
+ * @param helpRequest The helpRequest object
+ */
+function fillList(data, table, helpRequest) {
+    
+    console.log(data);
+    
+    for (i in data) {
+        
+        var request = data[i];
+        
+        var id = request.id;
+        var channel_name = request.channel_name;
+        
+        var temp_div = $("<div>")
+            .attr("id", "help-request-item")
+            .attr("class", "help-request-item")
+            .appendTo(table);
+        
+        // TODO: put them in their own temp_div
+        
+        var name = $("<div>")
+            .attr("id", "help-request-item-name")
+            .attr("class", "help-request-item-name")
+            .text(request.name)
+            .appendTo(temp_div);
+            
+        var summary = $("<div>")
+            .attr("id", "help-request-item-summary")
+            .attr("class", "help-request-item-summary")
+            .text(request.summary)
+            .appendTo(temp_div);
+            
+        // We need to generate a new function for each click.
+        temp_div.click(specificHRJoin(helpRequest, request.id, request.task_session, channel_name, request.owner));
+    }
+}
+
+/**
+ * Generates the click function which will let someone join a Help Request
+ */
+function specificHRJoin(helpRequest, help_request_id, task_session_id, channel_name, owner_id) {
+    return function(message) {
+        console.log("owner_id:" + owner_id);
+
+        if(owner_id == helpRequest.user.id) {
+            tab("help-request-resolve-container");
+            helpRequest.needsResolving = true;
+        }
+
+        helpRequest.help_request = {id: help_request_id};
+        helpRequest.joinHelpRequest(helpRequest, task_session_id, channel_name, {id: help_request_id});
+    }
+}
+
+/**
+ * Creates and then automatically joins the created help Request
+ *
+ * OLD?
+ */
+function createAndJoinHR(helpRequest) {
+
+    console.log("Creating new Help Request");
+   
+    // create help request
+    var content = {
+        name: $("#help-request-name").val(),
+        summary: $("#help-request-summary").val(),
+    }
+
+    helpRequest.createHelpRequest(content)
+
+    // update ui
+    tab("help-request-resolve-container");
+    
+    // Clean the list so that we don't have to worry about accuracy
+    $("#help-request-container").text("");
+    helpRequest.page_number = 1;
+    helpRequest.needsResolving = true;
+
+}
+
+function HelpRequest(){
+    this.model = 'helprequest';
+    this.client = null;
+    this.apiClient = null;
+    this.present = null;
+    this.connected = false;
+    this.requestList = null;
+
+    //relations
+    this.user = null;
+    this.task = null;
+    this.experiment = null;
+    this.condition = null;
+    this.task_session = null;
+    this.help_request = null;
+    this.focus = null;
+
+    // for website
+    this.page_number = 1;
+    this.needsResolving = false;
+
+}
+
+var CSS = `
+div.help-request-main{
+    
+    z-index: 999;
+    height: 45px;
+    width: 300px;
+    left: 10px;
+    display: block;
+    position: absolute;
+}
+
+.help-request-item {
+    padding-left: 5px;
+    padding-right: 5px;
+    z-index: 1000;
+}
+
+.help-request-item-summary {
+    font-size: 12px;
+    padding-left: 15px;
+}
+
+.help-request-item:hover {
+    background-color: grey;
+}
+    
+
+.help-request-header{
+
+    width: 300px;
+    height: 30px;
+    background-color: rgb(38, 50, 56);
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    display: inline-flex;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: white;
+}
+
+.help-request-hide-button {
+    float: left;
+    width: 250px;
+    padding: 7px;
+    font-size: 14px;
+    font-weight: 400;
+    font-family: "Roboto", sans-serif;
+}
+
+.help-request-button {
+    width: 50%;
+    text-align: center;
+    border-right: 1px solid;
+}
+
+.help-request-refresh-button {
+    width: 50%;
+    text-align: center;
+    border-left: 1px solid;
+}
+
+#help-request-submit {
+    width: 50%;
+    text-align: center;
+    border-left: 1px solid;
+}
+
+#help-request-return-button {
+    width: 50%;
+    text-align: center;
+    border-right: 1px solid;
+}
+
+.help-request-container {
+    background-color: white;
+    border-left-color: rgb(38, 50, 56);
+    border-left-style: solid;
+    border-left-width: 2px;
+    border-right-color: rgb(38, 50, 56);
+    border-right-style: solid;
+    border-right-width: 2px;
+    
+    font-size: 14px;
+    font-weight: 400;
+    font-family: "Roboto", sans-serif;
+    
+}
+.help-request-button-container {
+    background-color: white;
+    border-left-color: rgb(38, 50, 56);
+    border-left-style: solid;
+    border-left-width: 2px;
+    border-right-color: rgb(38, 50, 56);
+    border-right-style: solid;
+    border-right-width: 2px;
+    
+    padding-top: 5px;
+    padding-left: 10%;
+    padding-right: 10%;
+    
+    font-size: 14px;
+    font-weight: 400;
+    font-family: "Roboto", sans-serif; 
+}
+
+.help-request-create-container {
+    background-color: white;
+    border-left-color: rgb(38, 50, 56);
+    border-left-style: solid;
+    border-left-width: 2px;
+    border-right-color: rgb(38, 50, 56);
+    border-right-style: solid;
+    border-right-width: 2px;
+    
+    padding-top: 5px;
+    padding-left: 10%;
+    padding-right: 10%;
+    
+    font-size: 14px;
+    font-weight: 400;
+    font-family: "Roboto", sans-serif; 
+}
+
+.help-request-close-container {
+    background-color: rgb(38, 50, 56);
+    width: 288px;
+}
+
+.help-request-resolve-container {
+    border-left-color: rgb(38, 50, 56);
+    border-left-style: solid;
+    border-left-width: 2px;
+    border-right-color: rgb(38, 50, 56);
+    border-right-style: solid;
+    border-right-width: 2px;
+    background-color: white;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+`
+
+module.exports = HelpRequest;
+
+},{"./task-session":6,"jquery":11,"jquery-ui-browserify":10,"reconnectingwebsocket":15}],5:[function(require,module,exports){
 function TaskRoutingManager(){
     this.client = null;
     this.queues = null;
@@ -2337,7 +3497,6 @@ TaskRoutingManager.prototype.init = function(client, params) {
         }
 
     */
-    
     this.client = client;
     this.queues = {};
     this.params = params;
@@ -2350,15 +3509,78 @@ TaskRoutingManager.prototype.fetchTasks = function(queue_type, params, callback)
     params['type'] = queue_type;
     
     var that = this;
+
     let action = ["route", "list"]
     return this.client.action(schema, action, params).then(function(response){
-        
         // store the total number of tasks remaining
         that.queues[params['type']]['total'] = response.count;
-
+        console.log('count: ')
+        console.log(response.count)
         // store the fetched tasks into the queue
-        that.queues[params['type']]['queue'] = response.results;
+        unfilteredQueue = response.results;
+        that.queues[params['type']]['queue'] = unfilteredQueue;
+        //duplicate one of the items in the queue then randomize the queue
+        function getRandomInt(max) {
+            min = 0;
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min)) + min; //The maximum is exclusive and the minimum is inclusive
+        }
+        function shuffle(a) {
+            var j, x, i;
+            for (i = a.length - 1; i > 0; i--) {
+                j = Math.floor(Math.random() * (i + 1));
+                x = a[i];
+                a[i] = a[j];
+                a[j] = x;
 
+                if(i==dupIndex1){
+                    dupIndex1 = j;
+                }else if(j==dupIndex1){
+                    dupIndex1 = i;
+                }
+                if(i==dupIndex2){
+                    dupIndex2 = j;
+                }else if(j==dupIndex2){
+                    dupIndex2 = i;
+                }
+            }
+            return a;
+        }
+
+        function bestCopyEver(src) {
+           return Object.assign({}, src);
+        }
+        if(window.dejavu=='True'){
+            try{
+                //that.queues[params['type']]['total'] = response.count;
+                that.queues[params['type']]['total'] = window.image_num_per_set-1;
+                console.log("Dejavu is implemented.");
+                var dup_index = getRandomInt( that.queues[params['type']]['queue'].length );
+                var dupImg = bestCopyEver(that.queues[params['type']]['queue'][dup_index]);
+                if(that.queues[params['type']]['queue'].length>0){
+                        that.queues[params['type']]['queue'].push(dupImg);
+                        dupIndex1 = dup_index;
+                        dupIndex2 = that.queues[params['type']]['queue'].length-1;
+                        that.queues[params['type']]['queue'] = shuffle(that.queues[params['type']]['queue']);
+                        //dupIndex1 should always be smaller than dupIndex2
+                        var min = Math.min(dupIndex1,dupIndex2);
+                        var max = Math.max(dupIndex1,dupIndex2);
+                        dupIndex1 = min;
+                        dupIndex2 = max;
+
+                        if(sideBySideAllowed == 'False'){
+                            while(dupIndex1+1 == dupIndex2 && that.queues[params['type']]['queue'].length>2 ){
+                                shuffle(that.queues[params['type']]['queue']);//reshuffle if two duplicated images are side by side
+                                min = Math.min(dupIndex1,dupIndex2);
+                                max = Math.max(dupIndex1,dupIndex2);
+                                dupIndex1 = min;
+                                dupIndex2 = max;
+                            }
+                        }
+                }
+            }catch(error){}
+
+        }
         // return the first item in the queue to the callback
         callback(that.queues[params['type']]['queue'].shift());
     });
@@ -2370,7 +3592,7 @@ TaskRoutingManager.prototype.getNextTask = function(queue_type, callback){
         this.queues[queue_type] = {'queue': [], 'total': 0};
     }
 
-    if(this.queues[queue_type]['queue'].length > 1){
+    if(this.queues[queue_type]['queue'].length >= 1){
         callback(this.queues[queue_type]['queue'].shift());
     } else {
         this.fetchTasks(queue_type, this.params, function(task){
@@ -2388,6 +3610,7 @@ TaskRoutingManager.prototype.simulateFetchTasks = function(){
         {'id': 1, 'name': 'Papyri 1', 'url': 'https://curio-media.s3.amazonaws.com/oxyrhynchus-papyri/136833.jpg'},
         {'id': 2, 'name': 'Papyri 2', 'url': 'https://curio-media.s3.amazonaws.com/oxyrhynchus-papyri/136834.jpg'},
         {'id': 3, 'name': 'Papyri 3', 'url': 'https://curio-media.s3.amazonaws.com/oxyrhynchus-papyri/136835.jpg'},
+        {'id': 4, 'name': 'Papyri 4', 'url': 'https://curio-media.s3.amazonaws.com/oxyrhynchus-papyri/136836.jpg'},
     ]
 }
 
@@ -2400,7 +3623,8 @@ TaskRoutingManager.prototype.simulateGetNextTask = function(){
 };
 
 module.exports = TaskRoutingManager;
-},{}],5:[function(require,module,exports){
+
+},{}],6:[function(require,module,exports){
 var ReconnectingWebSocket = require('reconnectingwebsocket');
 var md = require("node-markdown").Markdown;
 
@@ -2437,9 +3661,9 @@ function TaskSession(){
 }
 
 /**
- * Initializes the TaskSession instance by fetching the associated policy and 
+ * Initializes the TaskSession instance by fetching the associated policy and
  * retrieving a session for the user.
- * @param {Object} params 
+ * @param {Object} params
  */
 TaskSession.prototype.init = function(params) {
     var that = this;
@@ -2483,10 +3707,25 @@ TaskSession.prototype.init = function(params) {
             print("ERROR: Can't handle transmitted Interface TaskUnlock event. (E: "+event+" )");
         }
         that.handleInterfaceActionTaskSetFocus = function(event){
-            print("ERROR: Can't handle transmitted Inteface TaskSetFocus event. (E: "+event+" )");
+            print("ERROR: Can't handle transmitted Interface TaskSetFocus event. (E: "+event+" )");
         }
         that.handleInterfaceActionTaskQueueSwitch = function(event){
-            print("ERROR: Can't handle transmitted Inteface TaskQueueSwitch event. (E: "+event+" )");
+            print("ERROR: Can't handle transmitted Interface TaskQueueSwitch event. (E: "+event+" )");
+        }
+        that.handleInterfaceActionUserJoin = function(event){
+            print("ERROR: Can't handle transmitted Inteface User Join event. (E: "+event+" )");
+        }
+        that.handleODHCreated = function(event){
+            print("ERROR: Can't handle transmitted  ODH Created event. (E: "+event+" )");
+        }
+        that.handleODHResolved = function(event){
+            print("ERROR: Can't handle transmitted  ODH Resolved event. (E: "+event+" )");
+        }
+        that.handleODHSetFocus = function(event) {
+            print("ERROR: Can't handle transmitted  ODH SetFocus event. (E: "+event+" )");
+        }
+        that.handleODHList = function(event) {
+            print("ERROR: Can't handle transmitted ODHList event. (E: "+event+" )");
         }
 
         // fetch the task policy
@@ -2498,8 +3737,9 @@ TaskSession.prototype.init = function(params) {
                 that.find().then(function(id){
                     print("Session Retrieved: "+id);
                     that.task_session = id;
-                    that.connect(that.task_session);
-                    
+                    console.log("connecting 1");
+                    //that.connect(that.task_session);
+
                     // resolve after we have the connection
                     resolve();
                 });
@@ -2512,16 +3752,19 @@ TaskSession.prototype.init = function(params) {
 
 /**
  * Sets callbacks that are executed when new events are sent and received.
- * 
+ *
  *  Structure of obj should be:
  *      {
  *          'send': function(){ ... },
  *          'receive': function(){ ... }
  *      }
- * 
- * @param {Object} obj 
+ *
+ * @param {Object} obj
  */
 TaskSession.prototype.setListeners = function(obj){
+
+    console.log("Assigning custom handlers");
+
     if('save' in obj && typeof obj['save'] === "function"){
         this.handleInterfaceActionSave = obj['save'];
     }
@@ -2546,11 +3789,26 @@ TaskSession.prototype.setListeners = function(obj){
     if('taskQueueSwitch' in obj && typeof obj['taskQueueSwitch'] === "function"){
         this.handleInterfaceActionTaskQueueSwitch = obj['taskQueueSwitch'];
     }
+    if('onUserJoin' in obj && typeof obj['onUserJoin'] === "function"){
+        this.handleInterfaceActionUserJoin = obj['onUserJoin'];
+    }
+    if('odhCreated' in obj && typeof obj['odhCreated'] == "function"){
+        this.handleODHCreated = obj['odhCreated'];
+    }
+    if("odhResolved" in obj && typeof obj['odhResolved'] == "function"){
+        this.handleODHResolved = obj['odhResolved'];
+    }
+    if("odhSetFocus" in obj && typeof obj['odhSetFocus'] == "function"){
+        this.handleODHSetFocus = obj['odhSetFocus'];
+    }
+    if("odhList" in obj && typeof obj['odhList'] == "function"){
+        this.handleODHList = obj['odhList'];
+    }
 };
 
 /**
  * Creates a TaskSession objects with a given channel name.
- * @param {String} channel_name 
+ * @param {String} channel_name
  */
 TaskSession.prototype.create = function(channel_name){
     return new Promise(function(resolve, reject) {
@@ -2622,10 +3880,15 @@ TaskSession.prototype.fetchPolicy = function(){
         print("Fetching policy ...");
 
         // set params
-        params = {
+        var params = {
             task: this.task.id,
-            experiment: this.experiment.id,
-            condition: this.condition.id
+        }
+
+        if(this.experiment){
+            params = jQuery.extend({experiment: this.experiment.id}, params)
+        }
+        if(this.condition){
+            params = jQuery.extend({condition: this.condition.id}, params)
         }
 
         let action = ['tasksessionpolicy', "list"];
@@ -2645,7 +3908,12 @@ TaskSession.prototype.fetchPolicy = function(){
  * Connects and maintains a valid websocket connection for a particula task session
  */
 TaskSession.prototype.connect = function(roomId){
-    $("#task-container").append('<div id="chats"></div>');
+
+    var parent_ele = $('.chat-container');
+    if(parent_ele.length === 0){
+        parent_ele = $("#task-container");
+    }
+    parent_ele.append('<div id="chats" class="chats-div"></div>');
 
     var ws_scheme = window.location.protocol == "https:" ? "wss" : "ws";
     var ws_path = ws_scheme + '://' + window.location.host + "/collaboration/stream/";
@@ -2685,7 +3953,7 @@ TaskSession.prototype.connect = function(roomId){
                 var msgdiv = $('#chat-messages');
                 msgdiv.append("<div class='contextual-message text-muted'>" + diff + " left the room!" + "</div>");
                 msgdiv.scrollTop(msgdiv.prop("scrollHeight"));
-            }   
+            }
 
             // update the tooltip
             ele.attr('data-tooltip', tooltip_html);
@@ -2881,12 +4149,12 @@ TaskSession.prototype.connect = function(roomId){
                     }
 
                     // calculate time
-                    var currentdate = new Date(); 
+                    var currentdate = new Date();
                     var datetime = (currentdate.getMonth()+1) + "/"
-                                    + currentdate.getDate()  + "/" 
-                                    + currentdate.getFullYear() + " @ "  
-                                    + currentdate.getHours() + ":"  
-                                    + currentdate.getMinutes() + ":" 
+                                    + currentdate.getDate()  + "/"
+                                    + currentdate.getFullYear() + " @ "
+                                    + currentdate.getHours() + ":"
+                                    + currentdate.getMinutes() + ":"
                                     + currentdate.getSeconds();
 
                     // Message
@@ -2930,6 +4198,7 @@ TaskSession.prototype.connect = function(roomId){
                 case 6: // Server is updating us with active users in session
                     that.userList = data;
                     updateUserList();
+                    that.handleInterfaceActionUserJoin(data);
                     return;
                 case 9:
                     that.handleInterfaceActionSave(data);
@@ -2942,19 +4211,31 @@ TaskSession.prototype.connect = function(roomId){
                     break;
                 case 12:
                     that.handleInterfaceActionTaskSwitchForced(data);
-                    break; 
+                    break;
                 case 13:
                     that.handleInterfaceActionTaskLock(data);
-                    break;    
+                    break;
                 case 14:
                     that.handleInterfaceActionTaskUnlock(data);
-                    break;  
+                    break;
                 case 15:
                     that.handleInterfaceActionTaskSetFocus(data);
-                    break;   
+                    break;
                 case 16:
                     that.handleInterfaceActionTaskQueueSwitch(data);
-                    break;                 
+                    break;
+                case 30:
+                    that.handleODHCreated(data);
+                    break;
+                case 31:
+                    that.handleODHResolved(data);
+                    break;
+                case 32:
+                    that.handleODHSetFocus(data);
+                    break;
+                case 33:
+                    that.handleODHList(data);
+                    break;
                 default:
                     print("Unsupported message type!");
                     return;
@@ -3022,7 +4303,7 @@ TaskSession.prototype.loadState = function(callback){
 
 module.exports = TaskSession;
 
-},{"node-markdown":12,"reconnectingwebsocket":14}],6:[function(require,module,exports){
+},{"node-markdown":13,"reconnectingwebsocket":15}],7:[function(require,module,exports){
 !function() {
   var d3 = {
     version: "3.5.17"
@@ -12577,7 +13858,7 @@ module.exports = TaskSession;
   });
   if (typeof define === "function" && define.amd) this.d3 = d3, define(d3); else if (typeof module === "object" && module.exports) module.exports = d3; else this.d3 = d3;
 }();
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 /*! Hammer.JS - v2.0.7 - 2016-04-22
  * http://hammerjs.github.io/
  *
@@ -15222,7 +16503,7 @@ if (typeof define === 'function' && define.amd) {
 
 })(window, document, 'Hammer');
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*! jQuery UI - v1.11.0pre - 2013-09-27
 * http://jqueryui.com
 * Includes: jquery.ui.core.js, jquery.ui.widget.js, jquery.ui.mouse.js, jquery.ui.draggable.js, jquery.ui.droppable.js, jquery.ui.resizable.js, jquery.ui.selectable.js, jquery.ui.sortable.js, jquery.ui.effect.js, jquery.ui.accordion.js, jquery.ui.autocomplete.js, jquery.ui.button.js, jquery.ui.datepicker.js, jquery.ui.dialog.js, jquery.ui.effect-blind.js, jquery.ui.effect-bounce.js, jquery.ui.effect-clip.js, jquery.ui.effect-drop.js, jquery.ui.effect-explode.js, jquery.ui.effect-fade.js, jquery.ui.effect-fold.js, jquery.ui.effect-highlight.js, jquery.ui.effect-puff.js, jquery.ui.effect-pulsate.js, jquery.ui.effect-scale.js, jquery.ui.effect-shake.js, jquery.ui.effect-size.js, jquery.ui.effect-slide.js, jquery.ui.effect-transfer.js, jquery.ui.menu.js, jquery.ui.position.js, jquery.ui.progressbar.js, jquery.ui.slider.js, jquery.ui.spinner.js, jquery.ui.tabs.js, jquery.ui.tooltip.js
@@ -30328,10 +31609,10 @@ $.widget( "ui.tooltip", {
 
 }( jQuery ) );*/
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 $ = jQuery = require('jquery');
 module.exports = require('./dist/jquery-ui.js');
-},{"./dist/jquery-ui.js":8,"jquery":10}],10:[function(require,module,exports){
+},{"./dist/jquery-ui.js":9,"jquery":11}],11:[function(require,module,exports){
 /*!
  * jQuery JavaScript Library v3.2.1
  * https://jquery.com/
@@ -40586,7 +41867,7 @@ if ( !noGlobal ) {
 return jQuery;
 } );
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*!
  * Materialize v0.100.2 (http://materializecss.com)
  * Copyright 2014-2017 Materialize
@@ -50609,7 +51890,7 @@ if (Vel) {
   };
 })(jQuery);
 
-},{"hammerjs":7,"jquery":10}],12:[function(require,module,exports){
+},{"hammerjs":8,"jquery":11}],13:[function(require,module,exports){
 /* node-markdown is based on Showdown parser (see vendor/showdown) */
 /* usage: html = require("markdown").Markdown(markdown_string);    */
 
@@ -50736,7 +52017,7 @@ var stripUnwantedHTML = function(html /*, allowedTags, allowedAttributes, forceP
     });
 }
 
-},{"./vendor/showdown/src/showdown.js":13}],13:[function(require,module,exports){
+},{"./vendor/showdown/src/showdown.js":14}],14:[function(require,module,exports){
 // Line 70, 78 updated to be compatible with node.js module system
 // 2010 Andris Reinman
 
@@ -52036,7 +53317,7 @@ var escapeCharacters_callback = function(wholeMatch,m1) {
 }
 
 } // end of Showdown.converter
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // MIT License:
 //
 // Copyright (c) 2010-2012, Joe Walnes
@@ -52399,6 +53680,6 @@ var escapeCharacters_callback = function(wholeMatch,m1) {
     return ReconnectingWebSocket;
 });
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 !function(t,e){"object"==typeof exports&&"object"==typeof module?module.exports=e():"function"==typeof define&&define.amd?define([],e):"object"==typeof exports?exports.swal=e():t.swal=e()}(this,function(){return function(t){function e(o){if(n[o])return n[o].exports;var r=n[o]={i:o,l:!1,exports:{}};return t[o].call(r.exports,r,r.exports,e),r.l=!0,r.exports}var n={};return e.m=t,e.c=n,e.d=function(t,n,o){e.o(t,n)||Object.defineProperty(t,n,{configurable:!1,enumerable:!0,get:o})},e.n=function(t){var n=t&&t.__esModule?function(){return t.default}:function(){return t};return e.d(n,"a",n),n},e.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},e.p="",e(e.s=8)}([function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o="swal-button";e.CLASS_NAMES={MODAL:"swal-modal",OVERLAY:"swal-overlay",SHOW_MODAL:"swal-overlay--show-modal",MODAL_TITLE:"swal-title",MODAL_TEXT:"swal-text",ICON:"swal-icon",ICON_CUSTOM:"swal-icon--custom",CONTENT:"swal-content",FOOTER:"swal-footer",BUTTON_CONTAINER:"swal-button-container",BUTTON:o,CONFIRM_BUTTON:o+"--confirm",CANCEL_BUTTON:o+"--cancel",DANGER_BUTTON:o+"--danger",BUTTON_LOADING:o+"--loading",BUTTON_LOADER:o+"__loader"},e.default=e.CLASS_NAMES},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.getNode=function(t){var e="."+t;return document.querySelector(e)},e.stringToNode=function(t){var e=document.createElement("div");return e.innerHTML=t.trim(),e.firstChild},e.insertAfter=function(t,e){var n=e.nextSibling;e.parentNode.insertBefore(t,n)},e.removeNode=function(t){t.parentElement.removeChild(t)},e.throwErr=function(t){throw t=t.replace(/ +(?= )/g,""),"SweetAlert: "+(t=t.trim())},e.isPlainObject=function(t){if("[object Object]"!==Object.prototype.toString.call(t))return!1;var e=Object.getPrototypeOf(t);return null===e||e===Object.prototype},e.ordinalSuffixOf=function(t){var e=t%10,n=t%100;return 1===e&&11!==n?t+"st":2===e&&12!==n?t+"nd":3===e&&13!==n?t+"rd":t+"th"}},function(t,e,n){"use strict";function o(t){for(var n in t)e.hasOwnProperty(n)||(e[n]=t[n])}Object.defineProperty(e,"__esModule",{value:!0}),o(n(25));var r=n(26);e.overlayMarkup=r.default,o(n(27)),o(n(28)),o(n(29));var i=n(0),a=i.default.MODAL_TITLE,s=i.default.MODAL_TEXT,c=i.default.ICON,l=i.default.FOOTER;e.iconMarkup='\n  <div class="'+c+'"></div>',e.titleMarkup='\n  <div class="'+a+'"></div>\n',e.textMarkup='\n  <div class="'+s+'"></div>',e.footerMarkup='\n  <div class="'+l+'"></div>\n'},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1);e.CONFIRM_KEY="confirm",e.CANCEL_KEY="cancel";var r={visible:!0,text:null,value:null,className:"",closeModal:!0},i=Object.assign({},r,{visible:!1,text:"Cancel",value:null}),a=Object.assign({},r,{text:"OK",value:!0});e.defaultButtonList={cancel:i,confirm:a};var s=function(t){switch(t){case e.CONFIRM_KEY:return a;case e.CANCEL_KEY:return i;default:var n=t.charAt(0).toUpperCase()+t.slice(1);return Object.assign({},r,{text:n,value:t})}},c=function(t,e){var n=s(t);return!0===e?Object.assign({},n,{visible:!0}):"string"==typeof e?Object.assign({},n,{visible:!0,text:e}):o.isPlainObject(e)?Object.assign({visible:!0},n,e):Object.assign({},n,{visible:!1})},l=function(t){for(var e={},n=0,o=Object.keys(t);n<o.length;n++){var r=o[n],a=t[r],s=c(r,a);e[r]=s}return e.cancel||(e.cancel=i),e},u=function(t){var n={};switch(t.length){case 1:n[e.CANCEL_KEY]=Object.assign({},i,{visible:!1});break;case 2:n[e.CANCEL_KEY]=c(e.CANCEL_KEY,t[0]),n[e.CONFIRM_KEY]=c(e.CONFIRM_KEY,t[1]);break;default:o.throwErr("Invalid number of 'buttons' in array ("+t.length+").\n      If you want more than 2 buttons, you need to use an object!")}return n};e.getButtonListOpts=function(t){var n=e.defaultButtonList;return"string"==typeof t?n[e.CONFIRM_KEY]=c(e.CONFIRM_KEY,t):Array.isArray(t)?n=u(t):o.isPlainObject(t)?n=l(t):!0===t?n=u([!0,!0]):!1===t?n=u([!1,!1]):void 0===t&&(n=e.defaultButtonList),n}},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1),r=n(2),i=n(0),a=i.default.MODAL,s=i.default.OVERLAY,c=n(30),l=n(31),u=n(32),f=n(33);e.injectElIntoModal=function(t){var e=o.getNode(a),n=o.stringToNode(t);return e.appendChild(n),n};var d=function(t){t.className=a,t.textContent=""},p=function(t,e){d(t);var n=e.className;n&&t.classList.add(n)};e.initModalContent=function(t){var e=o.getNode(a);p(e,t),c.default(t.icon),l.initTitle(t.title),l.initText(t.text),f.default(t.content),u.default(t.buttons,t.dangerMode)};var m=function(){var t=o.getNode(s),e=o.stringToNode(r.modalMarkup);t.appendChild(e)};e.default=m},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(3),r={isOpen:!1,promise:null,actions:{},timer:null},i=Object.assign({},r);e.resetState=function(){i=Object.assign({},r)},e.setActionValue=function(t){if("string"==typeof t)return a(o.CONFIRM_KEY,t);for(var e in t)a(e,t[e])};var a=function(t,e){i.actions[t]||(i.actions[t]={}),Object.assign(i.actions[t],{value:e})};e.setActionOptionsFor=function(t,e){var n=(void 0===e?{}:e).closeModal,o=void 0===n||n;Object.assign(i.actions[t],{closeModal:o})},e.default=i},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1),r=n(3),i=n(0),a=i.default.OVERLAY,s=i.default.SHOW_MODAL,c=i.default.BUTTON,l=i.default.BUTTON_LOADING,u=n(5);e.openModal=function(){o.getNode(a).classList.add(s),u.default.isOpen=!0};var f=function(){o.getNode(a).classList.remove(s),u.default.isOpen=!1};e.onAction=function(t){void 0===t&&(t=r.CANCEL_KEY);var e=u.default.actions[t],n=e.value;if(!1===e.closeModal){var i=c+"--"+t;o.getNode(i).classList.add(l)}else f();u.default.promise.resolve(n)},e.getState=function(){var t=Object.assign({},u.default);return delete t.promise,delete t.timer,t},e.stopLoading=function(){for(var t=document.querySelectorAll("."+c),e=0;e<t.length;e++){t[e].classList.remove(l)}}},function(t,e){var n;n=function(){return this}();try{n=n||Function("return this")()||(0,eval)("this")}catch(t){"object"==typeof window&&(n=window)}t.exports=n},function(t,e,n){(function(e){t.exports=e.sweetAlert=n(9)}).call(e,n(7))},function(t,e,n){(function(e){t.exports=e.swal=n(10)}).call(e,n(7))},function(t,e,n){"undefined"!=typeof window&&n(11),n(16);var o=n(23).default;t.exports=o},function(t,e,n){var o=n(12);"string"==typeof o&&(o=[[t.i,o,""]]);var r={insertAt:"top"};r.transform=void 0;n(14)(o,r);o.locals&&(t.exports=o.locals)},function(t,e,n){e=t.exports=n(13)(void 0),e.push([t.i,'.swal-icon--error{border-color:#f27474;-webkit-animation:animateErrorIcon .5s;animation:animateErrorIcon .5s}.swal-icon--error__x-mark{position:relative;display:block;-webkit-animation:animateXMark .5s;animation:animateXMark .5s}.swal-icon--error__line{position:absolute;height:5px;width:47px;background-color:#f27474;display:block;top:37px;border-radius:2px}.swal-icon--error__line--left{-webkit-transform:rotate(45deg);transform:rotate(45deg);left:17px}.swal-icon--error__line--right{-webkit-transform:rotate(-45deg);transform:rotate(-45deg);right:16px}@-webkit-keyframes animateErrorIcon{0%{-webkit-transform:rotateX(100deg);transform:rotateX(100deg);opacity:0}to{-webkit-transform:rotateX(0deg);transform:rotateX(0deg);opacity:1}}@keyframes animateErrorIcon{0%{-webkit-transform:rotateX(100deg);transform:rotateX(100deg);opacity:0}to{-webkit-transform:rotateX(0deg);transform:rotateX(0deg);opacity:1}}@-webkit-keyframes animateXMark{0%{-webkit-transform:scale(.4);transform:scale(.4);margin-top:26px;opacity:0}50%{-webkit-transform:scale(.4);transform:scale(.4);margin-top:26px;opacity:0}80%{-webkit-transform:scale(1.15);transform:scale(1.15);margin-top:-6px}to{-webkit-transform:scale(1);transform:scale(1);margin-top:0;opacity:1}}@keyframes animateXMark{0%{-webkit-transform:scale(.4);transform:scale(.4);margin-top:26px;opacity:0}50%{-webkit-transform:scale(.4);transform:scale(.4);margin-top:26px;opacity:0}80%{-webkit-transform:scale(1.15);transform:scale(1.15);margin-top:-6px}to{-webkit-transform:scale(1);transform:scale(1);margin-top:0;opacity:1}}.swal-icon--warning{border-color:#f8bb86;-webkit-animation:pulseWarning .75s infinite alternate;animation:pulseWarning .75s infinite alternate}.swal-icon--warning__body{width:5px;height:47px;top:10px;border-radius:2px;margin-left:-2px}.swal-icon--warning__body,.swal-icon--warning__dot{position:absolute;left:50%;background-color:#f8bb86}.swal-icon--warning__dot{width:7px;height:7px;border-radius:50%;margin-left:-4px;bottom:-11px}@-webkit-keyframes pulseWarning{0%{border-color:#f8d486}to{border-color:#f8bb86}}@keyframes pulseWarning{0%{border-color:#f8d486}to{border-color:#f8bb86}}.swal-icon--success{border-color:#a5dc86}.swal-icon--success:after,.swal-icon--success:before{content:"";border-radius:50%;position:absolute;width:60px;height:120px;background:#fff;-webkit-transform:rotate(45deg);transform:rotate(45deg)}.swal-icon--success:before{border-radius:120px 0 0 120px;top:-7px;left:-33px;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:60px 60px;transform-origin:60px 60px}.swal-icon--success:after{border-radius:0 120px 120px 0;top:-11px;left:30px;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-transform-origin:0 60px;transform-origin:0 60px;-webkit-animation:rotatePlaceholder 4.25s ease-in;animation:rotatePlaceholder 4.25s ease-in}.swal-icon--success__ring{width:80px;height:80px;border:4px solid hsla(98,55%,69%,.2);border-radius:50%;box-sizing:content-box;position:absolute;left:-4px;top:-4px;z-index:2}.swal-icon--success__hide-corners{width:5px;height:90px;background-color:#fff;padding:1px;position:absolute;left:28px;top:8px;z-index:1;-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}.swal-icon--success__line{height:5px;background-color:#a5dc86;display:block;border-radius:2px;position:absolute;z-index:2}.swal-icon--success__line--tip{width:25px;left:14px;top:46px;-webkit-transform:rotate(45deg);transform:rotate(45deg);-webkit-animation:animateSuccessTip .75s;animation:animateSuccessTip .75s}.swal-icon--success__line--long{width:47px;right:8px;top:38px;-webkit-transform:rotate(-45deg);transform:rotate(-45deg);-webkit-animation:animateSuccessLong .75s;animation:animateSuccessLong .75s}@-webkit-keyframes rotatePlaceholder{0%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}5%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}12%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}to{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}}@keyframes rotatePlaceholder{0%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}5%{-webkit-transform:rotate(-45deg);transform:rotate(-45deg)}12%{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}to{-webkit-transform:rotate(-405deg);transform:rotate(-405deg)}}@-webkit-keyframes animateSuccessTip{0%{width:0;left:1px;top:19px}54%{width:0;left:1px;top:19px}70%{width:50px;left:-8px;top:37px}84%{width:17px;left:21px;top:48px}to{width:25px;left:14px;top:45px}}@keyframes animateSuccessTip{0%{width:0;left:1px;top:19px}54%{width:0;left:1px;top:19px}70%{width:50px;left:-8px;top:37px}84%{width:17px;left:21px;top:48px}to{width:25px;left:14px;top:45px}}@-webkit-keyframes animateSuccessLong{0%{width:0;right:46px;top:54px}65%{width:0;right:46px;top:54px}84%{width:55px;right:0;top:35px}to{width:47px;right:8px;top:38px}}@keyframes animateSuccessLong{0%{width:0;right:46px;top:54px}65%{width:0;right:46px;top:54px}84%{width:55px;right:0;top:35px}to{width:47px;right:8px;top:38px}}.swal-icon--info{border-color:#c9dae1}.swal-icon--info:before{width:5px;height:29px;bottom:17px;border-radius:2px;margin-left:-2px}.swal-icon--info:after,.swal-icon--info:before{content:"";position:absolute;left:50%;background-color:#c9dae1}.swal-icon--info:after{width:7px;height:7px;border-radius:50%;margin-left:-3px;top:19px}.swal-icon{width:80px;height:80px;border-width:4px;border-style:solid;border-radius:50%;padding:0;position:relative;box-sizing:content-box;margin:20px auto}.swal-icon:first-child{margin-top:32px}.swal-icon--custom{width:auto;height:auto;max-width:100%;border:none;border-radius:0}.swal-icon img{max-width:100%;max-height:100%}.swal-title{color:rgba(0,0,0,.65);font-weight:600;text-transform:none;position:relative;display:block;padding:13px 16px;font-size:27px;line-height:normal;text-align:center;margin-bottom:0}.swal-title:first-child{margin-top:26px}.swal-title:not(:first-child){padding-bottom:0}.swal-title:not(:last-child){margin-bottom:13px}.swal-text{font-size:16px;position:relative;float:none;line-height:normal;vertical-align:top;text-align:left;display:inline-block;margin:0;padding:0 10px;font-weight:400;color:rgba(0,0,0,.64);max-width:calc(100% - 20px);overflow-wrap:break-word;box-sizing:border-box}.swal-text:first-child{margin-top:45px}.swal-text:last-child{margin-bottom:45px}.swal-footer{text-align:right;padding-top:13px;margin-top:13px;padding:13px 16px;border-radius:inherit;border-top-left-radius:0;border-top-right-radius:0}.swal-button-container{margin:5px;display:inline-block;position:relative}.swal-button{background-color:#7cd1f9;color:#fff;border:none;box-shadow:none;border-radius:5px;font-weight:600;font-size:14px;padding:10px 24px;margin:0;cursor:pointer}.swal-button[not:disabled]:hover{background-color:#78cbf2}.swal-button:active{background-color:#70bce0}.swal-button:focus{outline:none;box-shadow:0 0 0 1px #fff,0 0 0 3px rgba(43,114,165,.29)}.swal-button[disabled]{opacity:.5;cursor:default}.swal-button::-moz-focus-inner{border:0}.swal-button--cancel{color:#555;background-color:#efefef}.swal-button--cancel[not:disabled]:hover{background-color:#e8e8e8}.swal-button--cancel:active{background-color:#d7d7d7}.swal-button--cancel:focus{box-shadow:0 0 0 1px #fff,0 0 0 3px rgba(116,136,150,.29)}.swal-button--danger{background-color:#e64942}.swal-button--danger[not:disabled]:hover{background-color:#df4740}.swal-button--danger:active{background-color:#cf423b}.swal-button--danger:focus{box-shadow:0 0 0 1px #fff,0 0 0 3px rgba(165,43,43,.29)}.swal-content{padding:0 20px;margin-top:20px;font-size:medium}.swal-content:last-child{margin-bottom:20px}.swal-content__input,.swal-content__textarea{-webkit-appearance:none;background-color:#fff;border:none;font-size:14px;display:block;box-sizing:border-box;width:100%;border:1px solid rgba(0,0,0,.14);padding:10px 13px;border-radius:2px;transition:border-color .2s}.swal-content__input:focus,.swal-content__textarea:focus{outline:none;border-color:#6db8ff}.swal-content__textarea{resize:vertical}.swal-button--loading{color:transparent}.swal-button--loading~.swal-button__loader{opacity:1}.swal-button__loader{position:absolute;height:auto;width:43px;z-index:2;left:50%;top:50%;-webkit-transform:translateX(-50%) translateY(-50%);transform:translateX(-50%) translateY(-50%);text-align:center;pointer-events:none;opacity:0}.swal-button__loader div{display:inline-block;float:none;vertical-align:baseline;width:9px;height:9px;padding:0;border:none;margin:2px;opacity:.4;border-radius:7px;background-color:hsla(0,0%,100%,.9);transition:background .2s;-webkit-animation:swal-loading-anim 1s infinite;animation:swal-loading-anim 1s infinite}.swal-button__loader div:nth-child(3n+2){-webkit-animation-delay:.15s;animation-delay:.15s}.swal-button__loader div:nth-child(3n+3){-webkit-animation-delay:.3s;animation-delay:.3s}@-webkit-keyframes swal-loading-anim{0%{opacity:.4}20%{opacity:.4}50%{opacity:1}to{opacity:.4}}@keyframes swal-loading-anim{0%{opacity:.4}20%{opacity:.4}50%{opacity:1}to{opacity:.4}}.swal-overlay{position:fixed;top:0;bottom:0;left:0;right:0;text-align:center;font-size:0;overflow-y:auto;background-color:rgba(0,0,0,.4);z-index:10000;pointer-events:none;opacity:0;transition:opacity .3s}.swal-overlay:before{content:" ";display:inline-block;vertical-align:middle;height:100%}.swal-overlay--show-modal{opacity:1;pointer-events:auto}.swal-overlay--show-modal .swal-modal{opacity:1;pointer-events:auto;box-sizing:border-box;-webkit-animation:showSweetAlert .3s;animation:showSweetAlert .3s;will-change:transform}.swal-modal{width:478px;opacity:0;pointer-events:none;background-color:#fff;text-align:center;border-radius:5px;position:static;margin:20px auto;display:inline-block;vertical-align:middle;-webkit-transform:scale(1);transform:scale(1);-webkit-transform-origin:50% 50%;transform-origin:50% 50%;z-index:10001;transition:opacity .2s,-webkit-transform .3s;transition:transform .3s,opacity .2s;transition:transform .3s,opacity .2s,-webkit-transform .3s}@media (max-width:500px){.swal-modal{width:calc(100% - 20px)}}@-webkit-keyframes showSweetAlert{0%{-webkit-transform:scale(1);transform:scale(1)}1%{-webkit-transform:scale(.5);transform:scale(.5)}45%{-webkit-transform:scale(1.05);transform:scale(1.05)}80%{-webkit-transform:scale(.95);transform:scale(.95)}to{-webkit-transform:scale(1);transform:scale(1)}}@keyframes showSweetAlert{0%{-webkit-transform:scale(1);transform:scale(1)}1%{-webkit-transform:scale(.5);transform:scale(.5)}45%{-webkit-transform:scale(1.05);transform:scale(1.05)}80%{-webkit-transform:scale(.95);transform:scale(.95)}to{-webkit-transform:scale(1);transform:scale(1)}}',""])},function(t,e){function n(t,e){var n=t[1]||"",r=t[3];if(!r)return n;if(e&&"function"==typeof btoa){var i=o(r);return[n].concat(r.sources.map(function(t){return"/*# sourceURL="+r.sourceRoot+t+" */"})).concat([i]).join("\n")}return[n].join("\n")}function o(t){return"/*# sourceMappingURL=data:application/json;charset=utf-8;base64,"+btoa(unescape(encodeURIComponent(JSON.stringify(t))))+" */"}t.exports=function(t){var e=[];return e.toString=function(){return this.map(function(e){var o=n(e,t);return e[2]?"@media "+e[2]+"{"+o+"}":o}).join("")},e.i=function(t,n){"string"==typeof t&&(t=[[null,t,""]]);for(var o={},r=0;r<this.length;r++){var i=this[r][0];"number"==typeof i&&(o[i]=!0)}for(r=0;r<t.length;r++){var a=t[r];"number"==typeof a[0]&&o[a[0]]||(n&&!a[2]?a[2]=n:n&&(a[2]="("+a[2]+") and ("+n+")"),e.push(a))}},e}},function(t,e,n){function o(t,e){for(var n=0;n<t.length;n++){var o=t[n],r=m[o.id];if(r){r.refs++;for(var i=0;i<r.parts.length;i++)r.parts[i](o.parts[i]);for(;i<o.parts.length;i++)r.parts.push(u(o.parts[i],e))}else{for(var a=[],i=0;i<o.parts.length;i++)a.push(u(o.parts[i],e));m[o.id]={id:o.id,refs:1,parts:a}}}}function r(t,e){for(var n=[],o={},r=0;r<t.length;r++){var i=t[r],a=e.base?i[0]+e.base:i[0],s=i[1],c=i[2],l=i[3],u={css:s,media:c,sourceMap:l};o[a]?o[a].parts.push(u):n.push(o[a]={id:a,parts:[u]})}return n}function i(t,e){var n=v(t.insertInto);if(!n)throw new Error("Couldn't find a style target. This probably means that the value for the 'insertInto' parameter is invalid.");var o=w[w.length-1];if("top"===t.insertAt)o?o.nextSibling?n.insertBefore(e,o.nextSibling):n.appendChild(e):n.insertBefore(e,n.firstChild),w.push(e);else{if("bottom"!==t.insertAt)throw new Error("Invalid value for parameter 'insertAt'. Must be 'top' or 'bottom'.");n.appendChild(e)}}function a(t){if(null===t.parentNode)return!1;t.parentNode.removeChild(t);var e=w.indexOf(t);e>=0&&w.splice(e,1)}function s(t){var e=document.createElement("style");return t.attrs.type="text/css",l(e,t.attrs),i(t,e),e}function c(t){var e=document.createElement("link");return t.attrs.type="text/css",t.attrs.rel="stylesheet",l(e,t.attrs),i(t,e),e}function l(t,e){Object.keys(e).forEach(function(n){t.setAttribute(n,e[n])})}function u(t,e){var n,o,r,i;if(e.transform&&t.css){if(!(i=e.transform(t.css)))return function(){};t.css=i}if(e.singleton){var l=h++;n=g||(g=s(e)),o=f.bind(null,n,l,!1),r=f.bind(null,n,l,!0)}else t.sourceMap&&"function"==typeof URL&&"function"==typeof URL.createObjectURL&&"function"==typeof URL.revokeObjectURL&&"function"==typeof Blob&&"function"==typeof btoa?(n=c(e),o=p.bind(null,n,e),r=function(){a(n),n.href&&URL.revokeObjectURL(n.href)}):(n=s(e),o=d.bind(null,n),r=function(){a(n)});return o(t),function(e){if(e){if(e.css===t.css&&e.media===t.media&&e.sourceMap===t.sourceMap)return;o(t=e)}else r()}}function f(t,e,n,o){var r=n?"":o.css;if(t.styleSheet)t.styleSheet.cssText=x(e,r);else{var i=document.createTextNode(r),a=t.childNodes;a[e]&&t.removeChild(a[e]),a.length?t.insertBefore(i,a[e]):t.appendChild(i)}}function d(t,e){var n=e.css,o=e.media;if(o&&t.setAttribute("media",o),t.styleSheet)t.styleSheet.cssText=n;else{for(;t.firstChild;)t.removeChild(t.firstChild);t.appendChild(document.createTextNode(n))}}function p(t,e,n){var o=n.css,r=n.sourceMap,i=void 0===e.convertToAbsoluteUrls&&r;(e.convertToAbsoluteUrls||i)&&(o=y(o)),r&&(o+="\n/*# sourceMappingURL=data:application/json;base64,"+btoa(unescape(encodeURIComponent(JSON.stringify(r))))+" */");var a=new Blob([o],{type:"text/css"}),s=t.href;t.href=URL.createObjectURL(a),s&&URL.revokeObjectURL(s)}var m={},b=function(t){var e;return function(){return void 0===e&&(e=t.apply(this,arguments)),e}}(function(){return window&&document&&document.all&&!window.atob}),v=function(t){var e={};return function(n){return void 0===e[n]&&(e[n]=t.call(this,n)),e[n]}}(function(t){return document.querySelector(t)}),g=null,h=0,w=[],y=n(15);t.exports=function(t,e){if("undefined"!=typeof DEBUG&&DEBUG&&"object"!=typeof document)throw new Error("The style-loader cannot be used in a non-browser environment");e=e||{},e.attrs="object"==typeof e.attrs?e.attrs:{},e.singleton||(e.singleton=b()),e.insertInto||(e.insertInto="head"),e.insertAt||(e.insertAt="bottom");var n=r(t,e);return o(n,e),function(t){for(var i=[],a=0;a<n.length;a++){var s=n[a],c=m[s.id];c.refs--,i.push(c)}if(t){o(r(t,e),e)}for(var a=0;a<i.length;a++){var c=i[a];if(0===c.refs){for(var l=0;l<c.parts.length;l++)c.parts[l]();delete m[c.id]}}}};var x=function(){var t=[];return function(e,n){return t[e]=n,t.filter(Boolean).join("\n")}}()},function(t,e){t.exports=function(t){var e="undefined"!=typeof window&&window.location;if(!e)throw new Error("fixUrls requires window.location");if(!t||"string"!=typeof t)return t;var n=e.protocol+"//"+e.host,o=n+e.pathname.replace(/\/[^\/]*$/,"/");return t.replace(/url\s*\(((?:[^)(]|\((?:[^)(]+|\([^)(]*\))*\))*)\)/gi,function(t,e){var r=e.trim().replace(/^"(.*)"$/,function(t,e){return e}).replace(/^'(.*)'$/,function(t,e){return e});if(/^(#|data:|http:\/\/|https:\/\/|file:\/\/\/)/i.test(r))return t;var i;return i=0===r.indexOf("//")?r:0===r.indexOf("/")?n+r:o+r.replace(/^\.\//,""),"url("+JSON.stringify(i)+")"})}},function(t,e,n){var o=n(17);"undefined"==typeof window||window.Promise||(window.Promise=o),n(21),String.prototype.includes||(String.prototype.includes=function(t,e){"use strict";return"number"!=typeof e&&(e=0),!(e+t.length>this.length)&&-1!==this.indexOf(t,e)}),Array.prototype.includes||Object.defineProperty(Array.prototype,"includes",{value:function(t,e){if(null==this)throw new TypeError('"this" is null or not defined');var n=Object(this),o=n.length>>>0;if(0===o)return!1;for(var r=0|e,i=Math.max(r>=0?r:o-Math.abs(r),0);i<o;){if(function(t,e){return t===e||"number"==typeof t&&"number"==typeof e&&isNaN(t)&&isNaN(e)}(n[i],t))return!0;i++}return!1}}),"undefined"!=typeof window&&function(t){t.forEach(function(t){t.hasOwnProperty("remove")||Object.defineProperty(t,"remove",{configurable:!0,enumerable:!0,writable:!0,value:function(){this.parentNode.removeChild(this)}})})}([Element.prototype,CharacterData.prototype,DocumentType.prototype])},function(t,e,n){(function(e){!function(n){function o(){}function r(t,e){return function(){t.apply(e,arguments)}}function i(t){if("object"!=typeof this)throw new TypeError("Promises must be constructed via new");if("function"!=typeof t)throw new TypeError("not a function");this._state=0,this._handled=!1,this._value=void 0,this._deferreds=[],f(t,this)}function a(t,e){for(;3===t._state;)t=t._value;if(0===t._state)return void t._deferreds.push(e);t._handled=!0,i._immediateFn(function(){var n=1===t._state?e.onFulfilled:e.onRejected;if(null===n)return void(1===t._state?s:c)(e.promise,t._value);var o;try{o=n(t._value)}catch(t){return void c(e.promise,t)}s(e.promise,o)})}function s(t,e){try{if(e===t)throw new TypeError("A promise cannot be resolved with itself.");if(e&&("object"==typeof e||"function"==typeof e)){var n=e.then;if(e instanceof i)return t._state=3,t._value=e,void l(t);if("function"==typeof n)return void f(r(n,e),t)}t._state=1,t._value=e,l(t)}catch(e){c(t,e)}}function c(t,e){t._state=2,t._value=e,l(t)}function l(t){2===t._state&&0===t._deferreds.length&&i._immediateFn(function(){t._handled||i._unhandledRejectionFn(t._value)});for(var e=0,n=t._deferreds.length;e<n;e++)a(t,t._deferreds[e]);t._deferreds=null}function u(t,e,n){this.onFulfilled="function"==typeof t?t:null,this.onRejected="function"==typeof e?e:null,this.promise=n}function f(t,e){var n=!1;try{t(function(t){n||(n=!0,s(e,t))},function(t){n||(n=!0,c(e,t))})}catch(t){if(n)return;n=!0,c(e,t)}}var d=setTimeout;i.prototype.catch=function(t){return this.then(null,t)},i.prototype.then=function(t,e){var n=new this.constructor(o);return a(this,new u(t,e,n)),n},i.all=function(t){var e=Array.prototype.slice.call(t);return new i(function(t,n){function o(i,a){try{if(a&&("object"==typeof a||"function"==typeof a)){var s=a.then;if("function"==typeof s)return void s.call(a,function(t){o(i,t)},n)}e[i]=a,0==--r&&t(e)}catch(t){n(t)}}if(0===e.length)return t([]);for(var r=e.length,i=0;i<e.length;i++)o(i,e[i])})},i.resolve=function(t){return t&&"object"==typeof t&&t.constructor===i?t:new i(function(e){e(t)})},i.reject=function(t){return new i(function(e,n){n(t)})},i.race=function(t){return new i(function(e,n){for(var o=0,r=t.length;o<r;o++)t[o].then(e,n)})},i._immediateFn="function"==typeof e&&function(t){e(t)}||function(t){d(t,0)},i._unhandledRejectionFn=function(t){"undefined"!=typeof console&&console&&console.warn("Possible Unhandled Promise Rejection:",t)},i._setImmediateFn=function(t){i._immediateFn=t},i._setUnhandledRejectionFn=function(t){i._unhandledRejectionFn=t},void 0!==t&&t.exports?t.exports=i:n.Promise||(n.Promise=i)}(this)}).call(e,n(18).setImmediate)},function(t,e,n){function o(t,e){this._id=t,this._clearFn=e}var r=Function.prototype.apply;e.setTimeout=function(){return new o(r.call(setTimeout,window,arguments),clearTimeout)},e.setInterval=function(){return new o(r.call(setInterval,window,arguments),clearInterval)},e.clearTimeout=e.clearInterval=function(t){t&&t.close()},o.prototype.unref=o.prototype.ref=function(){},o.prototype.close=function(){this._clearFn.call(window,this._id)},e.enroll=function(t,e){clearTimeout(t._idleTimeoutId),t._idleTimeout=e},e.unenroll=function(t){clearTimeout(t._idleTimeoutId),t._idleTimeout=-1},e._unrefActive=e.active=function(t){clearTimeout(t._idleTimeoutId);var e=t._idleTimeout;e>=0&&(t._idleTimeoutId=setTimeout(function(){t._onTimeout&&t._onTimeout()},e))},n(19),e.setImmediate=setImmediate,e.clearImmediate=clearImmediate},function(t,e,n){(function(t,e){!function(t,n){"use strict";function o(t){"function"!=typeof t&&(t=new Function(""+t));for(var e=new Array(arguments.length-1),n=0;n<e.length;n++)e[n]=arguments[n+1];var o={callback:t,args:e};return l[c]=o,s(c),c++}function r(t){delete l[t]}function i(t){var e=t.callback,o=t.args;switch(o.length){case 0:e();break;case 1:e(o[0]);break;case 2:e(o[0],o[1]);break;case 3:e(o[0],o[1],o[2]);break;default:e.apply(n,o)}}function a(t){if(u)setTimeout(a,0,t);else{var e=l[t];if(e){u=!0;try{i(e)}finally{r(t),u=!1}}}}if(!t.setImmediate){var s,c=1,l={},u=!1,f=t.document,d=Object.getPrototypeOf&&Object.getPrototypeOf(t);d=d&&d.setTimeout?d:t,"[object process]"==={}.toString.call(t.process)?function(){s=function(t){e.nextTick(function(){a(t)})}}():function(){if(t.postMessage&&!t.importScripts){var e=!0,n=t.onmessage;return t.onmessage=function(){e=!1},t.postMessage("","*"),t.onmessage=n,e}}()?function(){var e="setImmediate$"+Math.random()+"$",n=function(n){n.source===t&&"string"==typeof n.data&&0===n.data.indexOf(e)&&a(+n.data.slice(e.length))};t.addEventListener?t.addEventListener("message",n,!1):t.attachEvent("onmessage",n),s=function(n){t.postMessage(e+n,"*")}}():t.MessageChannel?function(){var t=new MessageChannel;t.port1.onmessage=function(t){a(t.data)},s=function(e){t.port2.postMessage(e)}}():f&&"onreadystatechange"in f.createElement("script")?function(){var t=f.documentElement;s=function(e){var n=f.createElement("script");n.onreadystatechange=function(){a(e),n.onreadystatechange=null,t.removeChild(n),n=null},t.appendChild(n)}}():function(){s=function(t){setTimeout(a,0,t)}}(),d.setImmediate=o,d.clearImmediate=r}}("undefined"==typeof self?void 0===t?this:t:self)}).call(e,n(7),n(20))},function(t,e){function n(){throw new Error("setTimeout has not been defined")}function o(){throw new Error("clearTimeout has not been defined")}function r(t){if(u===setTimeout)return setTimeout(t,0);if((u===n||!u)&&setTimeout)return u=setTimeout,setTimeout(t,0);try{return u(t,0)}catch(e){try{return u.call(null,t,0)}catch(e){return u.call(this,t,0)}}}function i(t){if(f===clearTimeout)return clearTimeout(t);if((f===o||!f)&&clearTimeout)return f=clearTimeout,clearTimeout(t);try{return f(t)}catch(e){try{return f.call(null,t)}catch(e){return f.call(this,t)}}}function a(){b&&p&&(b=!1,p.length?m=p.concat(m):v=-1,m.length&&s())}function s(){if(!b){var t=r(a);b=!0;for(var e=m.length;e;){for(p=m,m=[];++v<e;)p&&p[v].run();v=-1,e=m.length}p=null,b=!1,i(t)}}function c(t,e){this.fun=t,this.array=e}function l(){}var u,f,d=t.exports={};!function(){try{u="function"==typeof setTimeout?setTimeout:n}catch(t){u=n}try{f="function"==typeof clearTimeout?clearTimeout:o}catch(t){f=o}}();var p,m=[],b=!1,v=-1;d.nextTick=function(t){var e=new Array(arguments.length-1);if(arguments.length>1)for(var n=1;n<arguments.length;n++)e[n-1]=arguments[n];m.push(new c(t,e)),1!==m.length||b||r(s)},c.prototype.run=function(){this.fun.apply(null,this.array)},d.title="browser",d.browser=!0,d.env={},d.argv=[],d.version="",d.versions={},d.on=l,d.addListener=l,d.once=l,d.off=l,d.removeListener=l,d.removeAllListeners=l,d.emit=l,d.prependListener=l,d.prependOnceListener=l,d.listeners=function(t){return[]},d.binding=function(t){throw new Error("process.binding is not supported")},d.cwd=function(){return"/"},d.chdir=function(t){throw new Error("process.chdir is not supported")},d.umask=function(){return 0}},function(t,e,n){"use strict";n(22).polyfill()},function(t,e,n){"use strict";function o(t,e){if(void 0===t||null===t)throw new TypeError("Cannot convert first argument to object");for(var n=Object(t),o=1;o<arguments.length;o++){var r=arguments[o];if(void 0!==r&&null!==r)for(var i=Object.keys(Object(r)),a=0,s=i.length;a<s;a++){var c=i[a],l=Object.getOwnPropertyDescriptor(r,c);void 0!==l&&l.enumerable&&(n[c]=r[c])}}return n}function r(){Object.assign||Object.defineProperty(Object,"assign",{enumerable:!1,configurable:!0,writable:!0,value:o})}t.exports={assign:o,polyfill:r}},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(24),r=n(6),i=n(5),a=n(36),s=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];if("undefined"!=typeof window){var n=a.getOpts.apply(void 0,t);return new Promise(function(t,e){i.default.promise={resolve:t,reject:e},o.default(n),setTimeout(function(){r.openModal()})})}};s.close=r.onAction,s.getState=r.getState,s.setActionValue=i.setActionValue,s.stopLoading=r.stopLoading,s.setDefaults=a.setDefaults,e.default=s},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1),r=n(0),i=r.default.MODAL,a=n(4),s=n(34),c=n(35),l=n(1);e.init=function(t){o.getNode(i)||(document.body||l.throwErr("You can only use SweetAlert AFTER the DOM has loaded!"),s.default(),a.default()),a.initModalContent(t),c.default(t)},e.default=e.init},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(0),r=o.default.MODAL;e.modalMarkup='\n  <div class="'+r+'" role="dialog" aria-modal="true"></div>',e.default=e.modalMarkup},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(0),r=o.default.OVERLAY,i='<div \n    class="'+r+'"\n    tabIndex="-1">\n  </div>';e.default=i},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(0),r=o.default.ICON;e.errorIconMarkup=function(){var t=r+"--error",e=t+"__line";return'\n    <div class="'+t+'__x-mark">\n      <span class="'+e+" "+e+'--left"></span>\n      <span class="'+e+" "+e+'--right"></span>\n    </div>\n  '},e.warningIconMarkup=function(){var t=r+"--warning";return'\n    <span class="'+t+'__body">\n      <span class="'+t+'__dot"></span>\n    </span>\n  '},e.successIconMarkup=function(){var t=r+"--success";return'\n    <span class="'+t+"__line "+t+'__line--long"></span>\n    <span class="'+t+"__line "+t+'__line--tip"></span>\n\n    <div class="'+t+'__ring"></div>\n    <div class="'+t+'__hide-corners"></div>\n  '}},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(0),r=o.default.CONTENT;e.contentMarkup='\n  <div class="'+r+'">\n\n  </div>\n'},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(0),r=o.default.BUTTON_CONTAINER,i=o.default.BUTTON,a=o.default.BUTTON_LOADER;e.buttonMarkup='\n  <div class="'+r+'">\n\n    <button\n      class="'+i+'"\n    ></button>\n\n    <div class="'+a+'">\n      <div></div>\n      <div></div>\n      <div></div>\n    </div>\n\n  </div>\n'},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(4),r=n(2),i=n(0),a=i.default.ICON,s=i.default.ICON_CUSTOM,c=["error","warning","success","info"],l={error:r.errorIconMarkup(),warning:r.warningIconMarkup(),success:r.successIconMarkup()},u=function(t,e){var n=a+"--"+t;e.classList.add(n);var o=l[t];o&&(e.innerHTML=o)},f=function(t,e){e.classList.add(s);var n=document.createElement("img");n.src=t,e.appendChild(n)},d=function(t){if(t){var e=o.injectElIntoModal(r.iconMarkup);c.includes(t)?u(t,e):f(t,e)}};e.default=d},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(2),r=n(4),i=function(t){navigator.userAgent.includes("AppleWebKit")&&(t.style.display="none",t.offsetHeight,t.style.display="")};e.initTitle=function(t){if(t){var e=r.injectElIntoModal(o.titleMarkup);e.textContent=t,i(e)}},e.initText=function(t){if(t){var e=document.createDocumentFragment();t.split("\n").forEach(function(t,n,o){e.appendChild(document.createTextNode(t)),n<o.length-1&&e.appendChild(document.createElement("br"))});var n=r.injectElIntoModal(o.textMarkup);n.appendChild(e),i(n)}}},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1),r=n(4),i=n(0),a=i.default.BUTTON,s=i.default.DANGER_BUTTON,c=n(3),l=n(2),u=n(6),f=n(5),d=function(t,e,n){var r=e.text,i=e.value,d=e.className,p=e.closeModal,m=o.stringToNode(l.buttonMarkup),b=m.querySelector("."+a),v=a+"--"+t;if(b.classList.add(v),d){(Array.isArray(d)?d:d.split(" ")).filter(function(t){return t.length>0}).forEach(function(t){b.classList.add(t)})}n&&t===c.CONFIRM_KEY&&b.classList.add(s),b.textContent=r;var g={};return g[t]=i,f.setActionValue(g),f.setActionOptionsFor(t,{closeModal:p}),b.addEventListener("click",function(){return u.onAction(t)}),m},p=function(t,e){var n=r.injectElIntoModal(l.footerMarkup);for(var o in t){var i=t[o],a=d(o,i,e);i.visible&&n.appendChild(a)}0===n.children.length&&n.remove()};e.default=p},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(3),r=n(4),i=n(2),a=n(5),s=n(6),c=n(0),l=c.default.CONTENT,u=function(t){t.addEventListener("input",function(t){var e=t.target,n=e.value;a.setActionValue(n)}),t.addEventListener("keyup",function(t){if("Enter"===t.key)return s.onAction(o.CONFIRM_KEY)}),setTimeout(function(){t.focus(),a.setActionValue("")},0)},f=function(t,e,n){var o=document.createElement(e),r=l+"__"+e;o.classList.add(r);for(var i in n){var a=n[i];o[i]=a}"input"===e&&u(o),t.appendChild(o)},d=function(t){if(t){var e=r.injectElIntoModal(i.contentMarkup),n=t.element,o=t.attributes;"string"==typeof n?f(e,n,o):e.appendChild(n)}};e.default=d},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1),r=n(2),i=function(){var t=o.stringToNode(r.overlayMarkup);document.body.appendChild(t)};e.default=i},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(5),r=n(6),i=n(1),a=n(3),s=n(0),c=s.default.MODAL,l=s.default.BUTTON,u=s.default.OVERLAY,f=function(t){t.preventDefault(),v()},d=function(t){t.preventDefault(),g()},p=function(t){if(o.default.isOpen)switch(t.key){case"Escape":return r.onAction(a.CANCEL_KEY)}},m=function(t){if(o.default.isOpen)switch(t.key){case"Tab":return f(t)}},b=function(t){if(o.default.isOpen)return"Tab"===t.key&&t.shiftKey?d(t):void 0},v=function(){var t=i.getNode(l);t&&(t.tabIndex=0,t.focus())},g=function(){var t=i.getNode(c),e=t.querySelectorAll("."+l),n=e.length-1,o=e[n];o&&o.focus()},h=function(t){t[t.length-1].addEventListener("keydown",m)},w=function(t){t[0].addEventListener("keydown",b)},y=function(){var t=i.getNode(c),e=t.querySelectorAll("."+l);e.length&&(h(e),w(e))},x=function(t){if(i.getNode(u)===t.target)return r.onAction(a.CANCEL_KEY)},_=function(t){var e=i.getNode(u);e.removeEventListener("click",x),t&&e.addEventListener("click",x)},k=function(t){o.default.timer&&clearTimeout(o.default.timer),t&&(o.default.timer=window.setTimeout(function(){return r.onAction(a.CANCEL_KEY)},t))},O=function(t){t.closeOnEsc?document.addEventListener("keyup",p):document.removeEventListener("keyup",p),t.dangerMode?v():g(),y(),_(t.closeOnClickOutside),k(t.timer)};e.default=O},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1),r=n(3),i=n(37),a=n(38),s={title:null,text:null,icon:null,buttons:r.defaultButtonList,content:null,className:null,closeOnClickOutside:!0,closeOnEsc:!0,dangerMode:!1,timer:null},c=Object.assign({},s);e.setDefaults=function(t){c=Object.assign({},s,t)};var l=function(t){var e=t&&t.button,n=t&&t.buttons;return void 0!==e&&void 0!==n&&o.throwErr("Cannot set both 'button' and 'buttons' options!"),void 0!==e?{confirm:e}:n},u=function(t){return o.ordinalSuffixOf(t+1)},f=function(t,e){o.throwErr(u(e)+" argument ('"+t+"') is invalid")},d=function(t,e){var n=t+1,r=e[n];o.isPlainObject(r)||void 0===r||o.throwErr("Expected "+u(n)+" argument ('"+r+"') to be a plain object")},p=function(t,e){var n=t+1,r=e[n];void 0!==r&&o.throwErr("Unexpected "+u(n)+" argument ("+r+")")},m=function(t,e,n,r){var i=typeof e,a="string"===i,s=e instanceof Element;if(a){if(0===n)return{text:e};if(1===n)return{text:e,title:r[0]};if(2===n)return d(n,r),{icon:e};f(e,n)}else{if(s&&0===n)return d(n,r),{content:e};if(o.isPlainObject(e))return p(n,r),e;f(e,n)}};e.getOpts=function(){for(var t=[],e=0;e<arguments.length;e++)t[e]=arguments[e];var n={};t.forEach(function(e,o){var r=m(0,e,o,t);Object.assign(n,r)});var o=l(n);n.buttons=r.getButtonListOpts(o),delete n.button,n.content=i.getContentOpts(n.content);var u=Object.assign({},s,c,n);return Object.keys(u).forEach(function(t){a.DEPRECATED_OPTS[t]&&a.logDeprecation(t)}),u}},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0});var o=n(1),r={element:"input",attributes:{placeholder:""}};e.getContentOpts=function(t){var e={};return o.isPlainObject(t)?Object.assign(e,t):t instanceof Element?{element:t}:"input"===t?r:null}},function(t,e,n){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.logDeprecation=function(t){var n=e.DEPRECATED_OPTS[t],o=n.onlyRename,r=n.replacement,i=n.subOption,a=n.link,s=o?"renamed":"deprecated",c='SweetAlert warning: "'+t+'" option has been '+s+".";if(r){c+=" Please use"+(i?' "'+i+'" in ':" ")+'"'+r+'" instead.'}var l="https://sweetalert.js.org";c+=a?" More details: "+l+a:" More details: "+l+"/guides/#upgrading-from-1x",console.warn(c)},e.DEPRECATED_OPTS={type:{replacement:"icon",link:"/docs/#icon"},imageUrl:{replacement:"icon",link:"/docs/#icon"},customClass:{replacement:"className",onlyRename:!0,link:"/docs/#classname"},imageSize:{},showCancelButton:{replacement:"buttons",link:"/docs/#buttons"},showConfirmButton:{replacement:"button",link:"/docs/#button"},confirmButtonText:{replacement:"button",link:"/docs/#button"},confirmButtonColor:{},cancelButtonText:{replacement:"buttons",link:"/docs/#buttons"},closeOnConfirm:{replacement:"button",subOption:"closeModal",link:"/docs/#button"},closeOnCancel:{replacement:"buttons",subOption:"closeModal",link:"/docs/#buttons"},showLoaderOnConfirm:{replacement:"buttons"},animation:{},inputType:{replacement:"content",link:"/docs/#content"},inputValue:{replacement:"content",link:"/docs/#content"},inputPlaceholder:{replacement:"content",link:"/docs/#content"},html:{replacement:"content",link:"/docs/#content"},allowEscapeKey:{replacement:"closeOnEsc",onlyRename:!0,link:"/docs/#closeonesc"},allowClickOutside:{replacement:"closeOnClickOutside",onlyRename:!0,link:"/docs/#closeonclickoutside"}}}])});
 },{}]},{},[1]);
