@@ -128,12 +128,12 @@ $.widget('crowdcurio.TextAnnotator', {
         this.options.config.total_tasks_practice = this.options.config.total_tasks_practice || 3;
 
         // output justification status
-        // this.options.config.mode = 'static';
+        // this.options.config.mode = 'static'; 
         // this.options.config.justification = 1;
         console.log("UI Mode: " + this.options.config.mode);
         console.log("UI Justification: " + this.options.config.real_justification);
 
-        if(this.options.config.justification === 1){
+        if(this.options.config.real_justification === 1){
             this.justificationEnabled = true;
         }
 
