@@ -233,7 +233,7 @@ $.widget('crowdcurio.TextAnnotator', {
                     swal("Phase I completed! Let's take a moment to see how you've done!");
                     that._parseLabelHistory();
                 } else {
-                    incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment);
+                    incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment, window.hitid);
                 }
             } else {
                 apiClient.setData(data['id']);
@@ -1400,7 +1400,7 @@ $.widget('crowdcurio.TextAnnotator', {
                         that.state = 'reviewing';
                         that._parseLabelHistory();
                     } else {
-                        incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment);
+                        incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment, window.hitid);
                     }
                 } else {
                     apiClient.setData(data['id']);
@@ -1861,7 +1861,7 @@ $.widget('crowdcurio.TextAnnotator', {
         } else {
             swal("You're Done!");
             setTimeout(function(){
-                incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment);
+                incrementExperimentWorkflowIndex(csrftoken, window.user, window.experiment, window.hitid);
             }, 10000);
         }
     },
