@@ -1576,7 +1576,9 @@ $.widget('crowdcurio.TextAnnotator', {
                 }
             });
         } else {
-            that.justification = 'JUSTIFICATION-OFF';
+            if(!that.justificationEnabled){
+                that.justification = 'JUSTIFICATION-OFF';
+            }
             
             // Get toast DOM Element, get instance, then call remove function
             if($('.toast').length){
